@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Production build
+dist/
+
+# Vite build output
+**.json
+
+# Editor directories and files
+.vscode/
+.idea/
+*.tsvs
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Runtime output
+*.pid
+*.seed
+*.env.local
+*.env.*.local
+
+# Next.js
+/.next/
+/out/
+
+# Nuxt
+.nuxt/'
