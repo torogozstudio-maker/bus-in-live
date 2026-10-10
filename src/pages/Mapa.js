@@ -98,7 +98,7 @@ export async function renderPage(container) {
         </div>
         <h2 class="empty-state-title">Error al cargar el mapa</h2>
         <p class="empty-state-text">No fue posible cargar el mapa. Inténtalo de nuevo.</p>
-        <button class="btn btn-primary" style="margin-top: 8px;" onclick="router.navigate('/')">Volver al inicio</button>
+        <button class="btn btn-primary" style="margin-top: 8px;" data-link="/" data-nav-link>Volver al inicio</button>
       </div>
     `;
   }

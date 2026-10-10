@@ -146,7 +146,7 @@ async function loadAdminRoutes() {
       <div class="alert alert-error" style="padding: 24px;">
         <strong>Error al cargar rutas</strong>
         <p>${error.message}</p>
-        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="location.reload()">Reintentar</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="router.navigate('/'); return false;">Reintentar</button>
       </div>
     `;
   }
@@ -176,7 +176,7 @@ function renderAdminRouteRow(route) {
             <button class="btn btn-success btn-sm btn-icon approve-btn" data-route-id="${route.id}" title="Aprobar">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </button>
-            <button class="btn btn-error btn-sm btn-icon reject-btn" data-route-id="${route.id}" title="Rechazar">
+            <button class="btn btn-danger btn-sm btn-icon reject-btn" data-route-id="${route.id}" title="Rechazar">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
             </button>
           ` : ''}
@@ -187,7 +187,7 @@ function renderAdminRouteRow(route) {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path></svg>
           </button>
           ${validationStatus !== 'rejected' ? `
-            <button class="btn btn-error btn-sm btn-icon delete-btn" data-route-id="${route.id}" title="Eliminar (soft delete)">
+            <button class="btn btn-danger btn-sm btn-icon delete-btn" data-route-id="${route.id}" title="Eliminar (soft delete)">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           ` : ''}

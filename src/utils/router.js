@@ -106,6 +106,13 @@ export const router = {
         e.preventDefault();
         const href = link.getAttribute('href');
         if (href) this.navigate(href);
+        return;
+      }
+      const button = e.target.closest('button[data-link]');
+      if (button) {
+        e.preventDefault();
+        const href = button.getAttribute('data-link');
+        if (href) this.navigate(href);
       }
     });
 

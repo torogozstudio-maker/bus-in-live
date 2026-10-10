@@ -159,18 +159,23 @@ function setupAuthListeners() {
   });
 }
 
+const baseUrl = import.meta.env.BASE_URL || '/';
+
 function setupRouteGuards() {
   router.beforeEach(async (pathname) => {
+    const normalizedPathname = pathname === '/' ? '/' : pathname.replace(baseUrl, '') || '/';
     const publicRoutes = ['/', '/login', '/register', '/reset-password', '/auth/callback'];
-    const isPublic = publicRoutes.some(r => pathname === r || pathname.startsWith(r + '/'));
+    const isPublic = publicRoutes.some(r => normalizedPathname === r || normalizedPathname.startsWith(r + '/'));
 
     if (!isPublic && !authService.isAuthenticated()) {
-      return '/login';
+      router.navigate(baseUrl + '/login');
+      return false;
     }
 
-    if (pathname.startsWith('/admin') && !authService.isAdmin()) {
+    if (normalizedPathname.startsWith('/admin') && !authService.isAdmin()) {
       toastService.error('Acceso denegado: se requieren permisos de administrador');
-      return '/';
+      router.navigate(baseUrl + '/');
+      return false;
     }
 
     return true;
@@ -274,6 +279,14 @@ export function createApp() {
   //   const { renderPage: render } = await import('./pages/Notificaciones.js');
   //   await render(getMain(), route);
   // });
+  // router.add('/rutas/crear', async (route) => {
+  //   const { renderPage: render } = await import('./pages/CrearRuta.js');
+  //   await render(getMain(), route);
+  // });
+  // router.add('/rutas/:id/editar', async (route) => {
+  //   const { renderPage: render } = await import('./pages/EditarRuta.js');
+  //   await render(getMain(), route);
+  // });
   router.add('/admin', async (route) => {
     const { renderPage: render } = await import('./pages/AdminDashboard.js');
     await render(getMain(), route);
@@ -304,7 +317,7 @@ export function createApp() {
         </div>
         <h2 class="empty-state-title">Página no encontrada</h2>
         <p class="empty-state-text">La página que buscas no existe.</p>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="router.navigate('/')">Ir al inicio</button>
+        <button class="btn btn-primary" style="margin-top:16px;" data-link="/" data-nav-link>Ir al inicio</button>
       </div>
     `;
   });

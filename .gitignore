@@ -8,16 +8,11 @@ node_modules/
 dist/
 
 # Vite build output
-dist/
 *.local.json
 
 # Editor directories and files
 .vscode/
 .idea/
-*.tsvs
-*.swp
-*.swo
-*~
 
 # Logs
 logs/
@@ -34,4 +29,4 @@ logs/
 /out/
 
 # Nuxt
-.nuxt/'
+.nuxt/

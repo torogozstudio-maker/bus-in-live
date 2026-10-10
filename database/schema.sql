@@ -14,6 +14,7 @@ CREATE TABLE profiles (
   nombre TEXT,
   avatar TEXT,
   role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  last_sign_in_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -31,6 +32,22 @@ CREATE TRIGGER update_profiles_updated_at
 BEFORE UPDATE ON profiles
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to create profile on auth sign-up
+CREATE OR REPLACE FUNCTION create_profile_on_signup()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO profiles (id, email, role)
+  VALUES (NEW.id, NEW.email, 'user')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER create_profile_on_auth_signup
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE FUNCTION create_profile_on_signup();
 
 -- Routes
 CREATE TABLE routes (
@@ -256,7 +273,7 @@ CREATE TABLE user_consents (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable Row Level Security (RLS)
+-- Enable Row Level Security (RLS) on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE route_variants ENABLE ROW LEVEL SECURITY;
@@ -276,35 +293,61 @@ ALTER TABLE search_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_consents ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies (simplified example - adaptar según necesidades)
+-- ===== RLS POLICIES =====
 
--- Profiles: users can read own profile, admins can read all
+-- Profiles: users can read own profile, admins can read all, service role can CRUD
 CREATE POLICY "Users can read own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
 
--- Routes: public can read approved routes, creators can CRUD
+CREATE POLICY "Admins can read all profiles" ON profiles
+  FOR SELECT USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+CREATE POLICY "Service role can manage profiles" ON profiles
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Routes: 
+-- - Public can read approved routes (not deleted)
+-- - Users can create routes
+-- - Users can update their own routes
+-- - Admins can manage all routes (view pending, approve/reject)
 CREATE POLICY "Approved routes are public" ON routes
   FOR SELECT USING (validation_status = 'approved' AND deleted_at IS NULL);
 
--- Users can create routes
 CREATE POLICY "Users can create routes" ON routes
   FOR INSERT WITH CHECK (created_by = auth.uid());
 
--- Users can update their own routes
 CREATE POLICY "Users can update own routes" ON routes
   FOR UPDATE USING (created_by = auth.uid());
 
--- Incidents: public can read active, users can create, admins can CRUD
-CREATE POLICY "Active incidents are public" ON incidents
-  FOR SELECT USING (status = 'active');
+CREATE POLICY "Admins can manage all routes" ON routes
+  FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
 
--- Reports: users can create, admins can CRUD
-CREATE POLICY "Users can create reports" ON reports
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+-- Route Variants: users can read variants for approved routes
+CREATE POLICY "Route variants for approved routes" ON route_variants
+  FOR SELECT USING (
+    route_id IN (SELECT id FROM routes WHERE validation_status = 'approved' AND deleted_at IS NULL)
+  );
+
+-- Stops: public can read all stops
+CREATE POLICY "Stops are public" ON stops
+  FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can manage own stops" ON stops
+  FOR ALL USING (created_by = auth.uid());
 
 -- Route Stops: public can read
 CREATE POLICY "Route stops are public" ON route_stops
   FOR SELECT USING (TRUE);
+
+-- Trip Sessions: users can read their own sessions, creators can CRUD
+CREATE POLICY "Users can read own trip sessions" ON trip_sessions
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create own trip sessions" ON trip_sessions
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own trip sessions" ON trip_sessions
+  FOR UPDATE USING (user_id = auth.uid());
 
 -- Location Points: only trip owner can read/write
 CREATE POLICY "Trip owner can manage location points" ON location_points
@@ -314,7 +357,116 @@ CREATE POLICY "Trip owner can manage location points" ON location_points
 CREATE POLICY "Bus observations are readable" ON bus_observations
   FOR SELECT USING (TRUE);
 
--- Indexes for performance (removed GiST, using btree instead)
+CREATE POLICY "Users can create bus observations" ON bus_observations
+  FOR INSERT WITH CHECK (
+    trip_session_id IN (SELECT id FROM trip_sessions WHERE user_id = auth.uid())
+  );
+
+-- Incidents: 
+-- - Public can read active incidents
+-- - Users can create incidents
+-- - Admins can CRUD all incidents
+CREATE POLICY "Active incidents are public" ON incidents
+  FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Users can create incidents" ON incidents
+  FOR INSERT WITH CHECK (created_by = auth.uid());
+
+CREATE POLICY "Admins can manage all incidents" ON incidents
+  FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+-- Reports: 
+-- - Users can create reports
+-- - Admins can CRUD all reports
+-- - Public can read reports with certain status
+CREATE POLICY "Users can create reports" ON reports
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Admins can manage all reports" ON reports
+  FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+CREATE POLICY "Reports are readable" ON reports
+  FOR SELECT USING (TRUE);
+
+-- Route Change Requests: users can create, admins can CRUD
+CREATE POLICY "Users can create route change requests" ON route_change_requests
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Admins can manage route change requests" ON route_change_requests
+  FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+-- Deletion Requests: users can create, admins can CRUD
+CREATE POLICY "Users can create deletion requests" ON deletion_requests
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Admins can manage deletion requests" ON deletion_requests
+  FOR ALL USING ((SELECT role FROM profiles WHERE id = auth.uid()) = 'admin');
+
+-- Favorites: users can manage own favorites
+CREATE POLICY "Users can manage own favorites" ON favorites
+  FOR ALL USING (user_id = auth.uid());
+
+-- Search History: users can manage own search history
+CREATE POLICY "Users can manage own search history" ON search_history
+  FOR ALL USING (user_id = auth.uid());
+
+-- Notification Preferences: users can manage own preferences
+CREATE POLICY "Users can manage own notification preferences" ON notification_preferences
+  FOR ALL USING (user_id = auth.uid());
+
+-- User Consents: users can manage own consents
+CREATE POLICY "Users can manage own consents" ON user_consents
+  FOR ALL USING (user_id = auth.uid());
+
+-- ===== FUNCTION: get_nearby_stops =====
+CREATE OR REPLACE FUNCTION get_nearby_stops(
+  p_latitude DOUBLE PRECISION,
+  p_longitude DOUBLE PRECISION,
+  p_radius INTEGER DEFAULT 500
+)
+RETURNS TABLE (
+  id UUID,
+  name TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  stop_type TEXT,
+  status TEXT,
+  distance_km DOUBLE PRECISION
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    s.id,
+    s.name,
+    s.latitude,
+    s.longitude,
+    s.stop_type,
+    s.status,
+    ROUND(
+      6371 * acos(
+        cos(radians(p_latitude)) * cos(radians(s.latitude)) * 
+        cos(radians(s.longitude) - radians(p_longitude)) + 
+        sin(radians(p_latitude)) * sin(radians(s.latitude))
+      ), 
+      2
+    ) AS distance_km
+  FROM stops s
+  WHERE s.status = 'active'
+  HAVING ROUND(
+    6371 * acos(
+      cos(radians(p_latitude)) * cos(radians(s.latitude)) * 
+      cos(radians(s.longitude) - radians(p_longitude)) + 
+      sin(radians(p_latitude)) * sin(radians(s.latitude))
+    ), 
+    2
+  ) <= p_radius
+  ORDER BY distance_km ASC;
+END;
+$$;
+
+-- ===== INDEXES =====
 CREATE INDEX idx_routes_code ON routes(code);
 CREATE INDEX idx_routes_city ON routes(city);
 CREATE INDEX idx_routes_status ON routes(status);
