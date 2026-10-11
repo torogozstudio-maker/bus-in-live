@@ -1,3 +1,4 @@
+import { appUrl } from '../utils/router.js';
 import { getSupabase } from './supabase.js';
 import { eventBus } from '../utils/eventBus.js';
 
@@ -117,7 +118,7 @@ export const authService = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: appUrl('/auth/callback')
       }
     });
 
@@ -138,7 +139,7 @@ export const authService = {
     if (!supabase) throw new Error('Supabase not configured');
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
+      redirectTo: appUrl('/reset-password')
     });
 
     if (error) throw error;

@@ -1,13 +1,37 @@
+// Base de despliegue ('' en local con base '/', '/bus-in-live' en GitHub Pages).
+// Las rutas internas del router SIEMPRE van sin base: '/', '/mapa', '/login'.
+const BASE = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+const REDIRECT_KEY = 'spa-redirect';
+
+/** Quita la base de un pathname del navegador: '/bus-in-live/mapa' -> '/mapa'. */
+export function stripBase(pathname) {
+  let p = pathname || '/';
+  if (BASE && (p === BASE || p.startsWith(BASE + '/'))) p = p.slice(BASE.length);
+  if (!p.startsWith('/')) p = '/' + p;
+  return p;
+}
+
+/** Ruta interna -> ruta real del navegador: '/mapa' -> '/bus-in-live/mapa'. */
+export function withBase(path) {
+  return BASE + stripBase(path);
+}
+
+/** URL absoluta de una ruta de la app (para redirects de OAuth, correos, etc.). */
+export function appUrl(path = '/') {
+  return `${window.location.origin}${withBase(path)}`;
+}
+
 const routes = new Map();
 let currentRoute = null;
 let notFoundHandler = null;
 let beforeEachGuards = [];
 
 function parsePath(path) {
-  const [pathname, search] = path.split('?');
+  const [rawPathname, search] = path.split('?');
+  const pathname = stripBase(rawPathname);
   const params = {};
   const query = new URLSearchParams(search || '');
-  return { pathname, query, params };
+  return { pathname, query, params, search: search ? `?${search}` : '' };
 }
 
 function matchRoute(pathname, pattern) {
@@ -48,7 +72,7 @@ export const router = {
   },
 
   async navigate(path, replace = false) {
-    const { pathname, query, params: urlParams } = parsePath(path);
+    const { pathname, query, params: urlParams, search } = parsePath(path);
 
     for (const guard of beforeEachGuards) {
       const result = await guard(pathname, query);
@@ -75,11 +99,19 @@ export const router = {
       await notFoundHandler(currentRoute);
     }
 
+    const url = withBase(pathname) + search;
     if (replace) {
-      history.replaceState(null, '', path);
+      history.replaceState(null, '', url);
     } else {
-      history.pushState(null, '', path);
+      history.pushState(null, '', url);
     }
+  },
+
+  /** Vuelve a cargar la ruta actual (lo usan los botones "Reintentar"). */
+  reload() {
+    const r = currentRoute;
+    const qs = r?.query?.toString();
+    return this.navigate((r?.pathname || '/') + (qs ? `?${qs}` : ''), true);
   },
 
   getCurrentRoute() {
@@ -101,6 +133,12 @@ export const router = {
     });
 
     document.addEventListener('click', (e) => {
+      const retry = e.target.closest('[data-retry]');
+      if (retry) {
+        e.preventDefault();
+        this.reload();
+        return;
+      }
       const link = e.target.closest('a[data-link]');
       if (link) {
         e.preventDefault();
@@ -116,7 +154,12 @@ export const router = {
       }
     });
 
-    const initialPath = window.location.pathname + window.location.search;
+    // 404.html (GitHub Pages) guarda la ruta pedida y nos manda a la raíz de la app
+    const saved = sessionStorage.getItem(REDIRECT_KEY);
+    sessionStorage.removeItem(REDIRECT_KEY);
+    const initialPath = saved
+      ? saved + window.location.search
+      : window.location.pathname + window.location.search;
     this.navigate(initialPath, true);
   },
 

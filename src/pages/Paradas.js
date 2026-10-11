@@ -88,7 +88,7 @@ async function loadStops(search = '') {
       <div class="empty-state" style="grid-column: 1 / -1;">
         <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
         <h2 class="empty-state-title">Error al cargar paradas</h2>
-        <button class="btn btn-primary" style="margin-top: 16px;" onclick="router.navigate('/'); return false;">Reintentar</button>
+        <button class="btn btn-primary" style="margin-top: 16px;" data-retry>Reintentar</button>
       </div>
     `;
   }

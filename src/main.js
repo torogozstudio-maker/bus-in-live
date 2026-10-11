@@ -1,4 +1,6 @@
 import './styles/main.css';
+import './styles/layout.css';
+import './styles/pages.css';
 import { createApp } from './app.js';
 import { initSupabase } from './services/supabase.js';
 import { authService } from './services/auth.js';

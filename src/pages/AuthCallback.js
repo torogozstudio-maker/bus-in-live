@@ -20,8 +20,10 @@ export async function renderPage(container) {
   try {
     const supabase = (await import('../services/supabase.js')).getSupabase();
     if (supabase) {
-      const { error } = await supabase.auth.exchangeCodeForSession(window.location.search);
+      // detectSessionInUrl ya intercambió el código al iniciar la app; solo confirmamos la sesión
+      const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
+      if (!data.session) throw new Error('No se obtuvo la sesión');
     }
     toastService.success('Sesión iniciada correctamente');
     router.navigate('/');

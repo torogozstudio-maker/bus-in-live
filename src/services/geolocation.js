@@ -68,6 +68,30 @@ export const geolocationService = {
     await checkPermission();
   },
 
+  /**
+   * Devuelve 'granted' | 'denied' | 'unsupported'. Si el navegador aún no decidió
+   * ('prompt'), pedir una posición hace que muestre el diálogo de permiso.
+   */
+  async requestPermission() {
+    if (!navigator.geolocation) return 'unsupported';
+
+    const state = await checkPermission();
+    if (state === 'granted' || state === 'denied') return state;
+
+    try {
+      await this.getCurrentPosition({ timeout: 10000 });
+      permissionState = 'granted';
+      return 'granted';
+    } catch (error) {
+      // Código 1 = permiso denegado; timeout/GPS apagado también implican que SÍ hubo permiso
+      if (error && error.code === 1) {
+        permissionState = 'denied';
+        return 'denied';
+      }
+      return 'granted';
+    }
+  },
+
   async getCurrentPosition(options = {}) {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -120,7 +144,9 @@ export const geolocationService = {
     return isTracking;
   },
 
-  getCurrentPosition() {
+  // Última posición conocida (síncrono, puede ser null). No confundir con getCurrentPosition(),
+  // que pide una posición nueva y devuelve una promesa.
+  getLastPosition() {
     return currentPosition;
   },
 

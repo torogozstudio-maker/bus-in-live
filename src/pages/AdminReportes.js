@@ -95,7 +95,7 @@ async function loadAdminReports() {
       <div class="alert alert-error" style="padding: 24px;">
         <strong>Error al cargar reportes</strong>
         <p>${error.message}</p>
-        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="router.navigate('/'); return false;">Reintentar</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" data-retry>Reintentar</button>
       </div>
     `;
   }

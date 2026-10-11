@@ -29,7 +29,7 @@ async function loadStopDetail(stopId) {
     if (error || !stop) throw new Error('Parada no encontrada');
 
     const isFav = await favoriteService.isFavorite(null, stopId);
-    const userPos = geolocationService.getCurrentPosition();
+    const userPos = geolocationService.getLastPosition();
     let distance = null;
 
     if (userPos && stop.latitude && stop.longitude) {

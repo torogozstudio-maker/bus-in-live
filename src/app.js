@@ -159,23 +159,20 @@ function setupAuthListeners() {
   });
 }
 
-const baseUrl = import.meta.env.BASE_URL || '/';
 
 function setupRouteGuards() {
   router.beforeEach(async (pathname) => {
-    const normalizedPathname = pathname === '/' ? '/' : pathname.replace(baseUrl, '') || '/';
+    // El router ya entrega rutas internas (sin la base /bus-in-live/)
     const publicRoutes = ['/', '/login', '/register', '/reset-password', '/auth/callback'];
-    const isPublic = publicRoutes.some(r => normalizedPathname === r || normalizedPathname.startsWith(r + '/'));
+    const isPublic = publicRoutes.some(r => pathname === r || (r !== '/' && pathname.startsWith(r + '/')));
 
     if (!isPublic && !authService.isAuthenticated()) {
-      router.navigate(baseUrl + '/login');
-      return false;
+      return '/login';
     }
 
-    if (normalizedPathname.startsWith('/admin') && !authService.isAdmin()) {
+    if (pathname.startsWith('/admin') && !authService.isAdmin()) {
       toastService.error('Acceso denegado: se requieren permisos de administrador');
-      router.navigate(baseUrl + '/');
-      return false;
+      return '/';
     }
 
     return true;

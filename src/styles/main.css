@@ -659,8 +659,7 @@
 @media (min-width: 768px) {
   .header-container {
     height: var(--header-height);
-  }
-}
+  }}
 
 .header-left {
   display: flex;
@@ -867,8 +866,7 @@
   .header-auth .btn {
     padding: var(--spacing-1) var(--spacing-2);
     font-size: var(--text-xs);
-  }
-}
+  }}
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .header-search {
@@ -885,8 +883,7 @@
 
   .header-actions .btn {
     padding: var(--spacing-1) var(--spacing-2);
-  }
-}
+  }}
 
 @media (max-width: 640px) {
   .header-container {
@@ -909,8 +906,7 @@
   .header-auth .btn {
     padding: var(--spacing-1) var(--spacing-2);
     font-size: var(--text-xs);
-  }
-}
+  }}
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .header-search {
@@ -927,14 +923,12 @@
 
   .header-actions .btn {
     padding: var(--spacing-1) var(--spacing-2);
-  }
-}
+  }}
 
 @media (min-width: 1024px) {
   .header-center {
     display: flex;
-  }
-}
+  }}
 
 .app-header {
   display: flex;
@@ -952,81 +946,9 @@
 @media (min-width: 768px) {
   .app-header {
     height: var(--header-height);
-  }
-}
+  }}
 
-.app-main-wrapper {
-  flex: 1;
-  padding: var(--spacing-4);
-}
-
-.app-sidebar {
-  width: 260px;
-  background-color: var(--surface);
-  border-right: 1px solid var(--border);
-  flex-shrink: 0;
-  height: calc(100vh - var(--header-height));
-  overflow-y: auto;
-}
-
-@media (max-width: 640px) {
-  .app-sidebar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-}
-
-.app-main {
-  flex: 1;
-  width: 100%;
-}
-
-.app-bottom-nav {
-  display: flex;
-  background-color: var(--surface);
-  border-top: 1px solid var(--border);
-  padding: var(--spacing-3) var(--spacing-4);
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-}
-
-@media (max-width: 640px) {
-  .app-bottom-nav {
-    padding: var(--spacing-2);
-  }
-}
-
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--transition-fast), visibility var(--transition-fast);
-  z-index: var(--z-dropdown);
-}
-
-.sidebar-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Sidebar styles */
-.sidebar {
-  padding: var(--spacing-4) var(--spacing-3);
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: var(--spacing-4);
-}
-
+/* Sidebar: ver layout.css */
 .brand-icon {
   color: var(--primary);
   flex-shrink: 0;
@@ -1037,51 +959,6 @@
   font-size: var(--text-lg);
   color: var(--text);
   white-space: nowrap;
-}
-
-.sidebar-menu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar-menu li {
-  margin-bottom: var(--spacing-1);
-}
-
-.sidebar-menu a {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  border-radius: var(--radius);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-}
-
-.sidebar-menu a:hover {
-  background-color: var(--background);
-  color: var(--primary);
-}
-
-.sidebar-menu a.active {
-  background-color: var(--primary-soft);
-  color: var(--primary);
-}
-
-.sidebar-menu .divider {
-  height: 1px;
-  background-color: var(--border);
-  margin: var(--spacing-3) 0;
-}
-
-.sidebar-menu .label {
-  font-size: var(--text-xs);
-  color: var(--muted);
-  margin-left: var(--spacing-2);
-  text-transform: uppercase;
 }
 
 /* Login y registro */

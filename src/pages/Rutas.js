@@ -138,7 +138,7 @@ async function loadRoutes() {
         </div>
         <h2 class="empty-state-title">Error al cargar rutas</h2>
         <p class="empty-state-text">Inténtalo de nuevo más tarde.</p>
-        <button class="btn btn-primary" style="margin-top: 16px;" onclick="router.navigate('/'); return false;">Reintentar</button>
+        <button class="btn btn-primary" style="margin-top: 16px;" data-retry>Reintentar</button>
       </div>
     `;
   }

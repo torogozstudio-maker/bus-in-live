@@ -227,7 +227,7 @@ async function searchNearbyStops() {
       <div class="alert alert-error" style="padding: 16px;">
         <strong>Error al buscar paradas</strong>
         <p>${error.message}</p>
-        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="router.navigate('/'); return false;">Reintentar</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" data-retry>Reintentar</button>
       </div>
     `;
   }

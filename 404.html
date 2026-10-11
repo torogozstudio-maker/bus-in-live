@@ -3,16 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Página no encontrada - bus-in-live</title>
-  <meta http-equiv="refresh" content="0;url=/bus-in-live/">
+  <title>bus-in-live</title>
+  <script>
+    // GitHub Pages no tiene "fallback" para apps de una sola página: cualquier ruta
+    // que no sea un archivo real (p. ej. /bus-in-live/mapa) llega aquí. Guardamos la
+    // ruta pedida y volvemos a la raíz de la app, que la restaura (ver router.start()).
+    // Se conservan ?query y #hash porque Supabase los usa en el login con Google.
+    (function () {
+      var base = '/bus-in-live/';
+      var l = window.location;
+      if (l.pathname.indexOf(base) === 0) {
+        sessionStorage.setItem('spa-redirect', l.pathname.slice(base.length - 1));
+      }
+      l.replace(base + l.search + l.hash);
+    })();
+  </script>
+  <noscript><meta http-equiv="refresh" content="0;url=/bus-in-live/"></noscript>
 </head>
-<body style="font-family: var(--font-sans); display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: var(--background); color: var(--text);">
-  <div style="text-align: center;">
-    <div style="width: 100%; max-width: 400px;">
-      <h1 style="color: var(--error); margin-bottom: 16px;">Página no encontrada</h1>
-      <p style="color: var(--muted); margin-bottom: 32px;">La página que buscas no existe o ha sido movida.</p>
-      <a href="/bus-in-live/" style="display: inline-block; padding: 12px 24px; background: var(--primary); color: white; text-decoration: none; border-radius: var(--radius); font-weight: 500;">Volver al inicio</a>
-    </div>
-  </div>
+<body style="font-family: system-ui, sans-serif; text-align: center; padding: 4rem 1rem;">
+  <p>Redirigiendo a <a href="/bus-in-live/">bus-in-live</a>…</p>
 </body>
 </html>
