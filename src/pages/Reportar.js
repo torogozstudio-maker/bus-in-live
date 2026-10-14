@@ -215,6 +215,7 @@ function showStepsForType(type) {
 }
 
 async function searchRoutesForReport(query) {
+  const routeSearch = document.getElementById('report-route-search');
   const routeResults = document.getElementById('report-route-results');
   if (!query.trim() || query.length < 2) {
     routeResults.style.display = 'none';
@@ -267,6 +268,7 @@ function selectRouteForReport(route) {
 }
 
 async function searchStopsForReport(query) {
+  const stopSearch = document.getElementById('report-stop-search');
   const stopResults = document.getElementById('report-stop-results');
   if (!query.trim() || query.length < 2) {
     stopResults.style.display = 'none';

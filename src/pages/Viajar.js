@@ -14,6 +14,7 @@ let currentSession = null;
 let currentPosition = null;
 let positionUpdateInterval = null;
 let map = null;
+let L = null; // Leaflet se carga bajo demanda (se asigna donde se importa) y se comparte con updateTripMap
 
 export async function renderPage(container, route) {
   const preSelectedRouteId = route.query.get('route');
@@ -268,6 +269,7 @@ async function loadRoutesForTrip(preSelectedId) {
 }
 
 async function searchRoutesForTrip(query) {
+  const routeSearch = document.getElementById('trip-route-search');
   const routeResults = document.getElementById('trip-route-results');
   if (!query.trim() || query.length < 2) {
     routeResults.style.display = 'none';
@@ -441,7 +443,7 @@ function stopPositionUpdates() {
 }
 
 async function initTripMap() {
-  const L = (await import('leaflet')).default;
+  L = (await import('leaflet')).default;
   const mapEl = document.getElementById('trip-map');
   if (!mapEl) return;
 

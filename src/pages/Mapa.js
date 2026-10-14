@@ -194,6 +194,7 @@ function attachListeners() {
 
 async function handleSearch(query) {
   const searchResults = document.getElementById('search-results');
+  const searchInput = document.getElementById('route-search');
   if (!query.trim() || query.length < 2) {
     searchResults.style.display = 'none';
     return;

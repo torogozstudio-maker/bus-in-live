@@ -1,0 +1,77 @@
+PRUEBAS DE SEGURIDAD (RLS) - ANTES: esquema anterior (database/schema.sql del commit abc8927)
+Entorno: PostgreSQL 16 local con roles anon/authenticated/service_role y auth.uid() simulados.
+
+FAIL  01 Trigger crea el perfil al registrarse (nombre desde metadatos, rol user aunque el metadato diga admin)   -> ('', '')
+PASS  02 Se crearon los 3 perfiles
+FAIL  03 Usuario normal consulta profiles SIN recursión y ve solo el suyo   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  04 Usuario NO puede ascenderse a admin   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+PASS  04b …y su rol sigue siendo user
+FAIL  05 Admin ve todos los perfiles   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  06 Admin puede cambiar el rol de otro usuario   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  07 Anónimo no ve perfiles   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  08 Usuario crea ruta pendiente (con RETURNING, como hace la app)   -> ERROR:  infinite recursion detected in policy for relation "profiles"
+PASS  09 Usuario NO puede crearse una ruta ya aprobada
+PASS  10 Usuario NO puede crear ruta a nombre de otro
+FAIL  11a El creador ve su ruta pendiente   -> 
+FAIL  11b Otro usuario NO la ve   -> 
+FAIL  11c Anónimo NO la ve   -> 
+FAIL  11d Admin la ve   -> 
+FAIL  12 Creador agrega variante a su ruta pendiente   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: insert into route_variants(route_id,name) values ('','Direct...
+                               
+PASS  13 Otro usuario NO puede agregar variantes a esa ruta
+FAIL  14 Creador agrega trazado (route_shapes)   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: ...sert into route_shapes(route_id,geometry) values ('','{"type...
+                            
+FAIL  15 Creador agrega paradas a su ruta (route_stops)   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: ...stops(route_id,stop_id,sequence,direction) select '',id,1,'o...
+                            
+FAIL  16a Variante/trazado/paradas ocultos para otro usuario mientras está pendiente   -> 
+FAIL  16b …y visibles para su creador   -> 
+FAIL  17 Creador NO puede auto-aprobar su ruta   -> (-1, 'ERROR:  invalid input syntax for type uuid: ""\nLINE 1: ... routes set validation_status=\'approved\' where id=\'\' returni...\n                
+FAIL  18 Admin aprueba la ruta   -> (-1, 'ERROR:  invalid input syntax for type uuid: ""\nLINE 1: ...ation_status=\'approved\', status=\'normal\' where id=\'\' returni...\n              
+FAIL  19a Tras aprobar: otro usuario ve ruta, variantes, trazados y paradas   -> 
+FAIL  19b Tras aprobar: anónimo ve la ruta   -> 
+FAIL  20 Creador ya no edita directamente una ruta aprobada   -> (-1, 'ERROR:  invalid input syntax for type uuid: ""\nLINE 1: ... x as (update routes set name=\'cambiada\' where id=\'\' returni...\n                
+PASS  21 Anónimo lee paradas
+PASS  22 Otro usuario no edita paradas ajenas
+FAIL  23 Usuario crea reporte   -> ERROR:  infinite recursion detected in policy for relation "profiles"
+PASS  24 Usuario NO puede crear reporte ya confirmado
+FAIL  25a Reporte pendiente: lo ve su autor   -> 
+FAIL  25b …no lo ve otro usuario ni anónimo   -> 
+FAIL  26 Admin ve reportes con el nombre del autor (join a profiles, como AdminReportes)   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  27 Admin confirma el reporte   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  28 Reporte confirmado es público   -> 
+FAIL  29 Usuario registra incidencia   -> ERROR:  infinite recursion detected in policy for relation "profiles"
+FAIL  30 Incidencia activa es pública   -> 
+FAIL  31 Admin actualiza incidencia con updated_at (columna que la app escribe)   -> (-1, 'ERROR:  column "updated_at" of relation "incidents" does not exist\nLINE 1: ...ith x as (update incidents set status=\'resolved\', updated_at...
+FAIL  32 Usuario guarda favorito   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: ...route_id) values ('aaaaaaaa-0000-0000-0000-000000000001','')
+                               
+PASS  33 Favoritos son privados
+PASS  34 No puede guardar favoritos a nombre de otro
+FAIL  35 Usuario inicia viaje   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: ...s) values ('aaaaaaaa-0000-0000-0000-000000000001','','active...
+                            
+FAIL  36 Guarda puntos GPS de su viaje   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: ...oints(trip_session_id,latitude,longitude) values ('',13.99,-...
+                            
+PASS  37 Otro usuario NO puede escribir en su viaje
+PASS  38 Viajes y GPS son privados
+FAIL  39 Usuario pide cambio de ruta   -> ERROR:  invalid input syntax for type uuid: ""
+LINE 1: ...ge_requests(route_id,user_id,type,status) values ('','aaaaaa...
+                            
+FAIL  40 Solicitud: la ve su autor y el admin, no otro usuario   -> 
+FAIL  41 Admin resuelve la solicitud   -> (-1, 'ERROR:  infinite recursion detected in policy for relation "profiles"')
+FAIL  42 get_nearby_stops con los nombres de parámetros de la app (500 m): solo paradas cercanas y activas   -> ('aaaaaaaa-0000-0000-0000-000000000001', "ERROR:  function get_nearby_stops(user_lat => numeric, user_lng => numeric, radius_meters => integer) does n
+      resultado 500 m: 
+FAIL  43 Con 3000 m incluye la parada lejana, ordenada por distancia y en METROS   -> ('aaaaaaaa-0000-0000-0000-000000000001', "ERROR:  function get_nearby_stops(user_lat => numeric, user_lng => numeric, radius_meters => integer) does n
+      resultado 3000 m: 
+FAIL  44 Función usable sin sesión y con radio por defecto   -> ERROR:  function get_nearby_stops(user_lat => numeric, user_lng => numeric) does not exist
+LINE 1: select count(*) from get_nearby_stops(user_lat => 1
+FAIL  45 last_sign_in_at se copia al perfil (AdminUsuarios)   -> f
+PASS  46 Anónimo no puede escribir
+FAIL  47 Ninguna política consulta profiles directamente (todas usan is_admin())   -> 5
+FAIL  48 Toda tabla con RLS tiene al menos una política   -> detours,route_shapes
+
+oldb: 57 líneas, 42 FALLO(S)

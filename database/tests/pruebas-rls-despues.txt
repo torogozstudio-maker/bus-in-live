@@ -1,0 +1,62 @@
+PRUEBAS DE SEGURIDAD (RLS) - DESPUES: tras aplicar database/migrations/002_security_fixes.sql
+Entorno: PostgreSQL 16 local con roles anon/authenticated/service_role y auth.uid() simulados.
+
+PASS  01 Trigger crea el perfil al registrarse (nombre desde metadatos, rol user aunque el metadato diga admin)
+PASS  02 Se crearon los 3 perfiles
+PASS  03 Usuario normal consulta profiles SIN recursión y ve solo el suyo
+PASS  04 Usuario NO puede ascenderse a admin
+PASS  04b …y su rol sigue siendo user
+PASS  05 Admin ve todos los perfiles
+PASS  06 Admin puede cambiar el rol de otro usuario
+PASS  07 Anónimo no ve perfiles
+PASS  08 Usuario crea ruta pendiente (con RETURNING, como hace la app)
+PASS  09 Usuario NO puede crearse una ruta ya aprobada
+PASS  10 Usuario NO puede crear ruta a nombre de otro
+PASS  11a El creador ve su ruta pendiente
+PASS  11b Otro usuario NO la ve
+PASS  11c Anónimo NO la ve
+PASS  11d Admin la ve
+PASS  12 Creador agrega variante a su ruta pendiente
+PASS  13 Otro usuario NO puede agregar variantes a esa ruta
+PASS  14 Creador agrega trazado (route_shapes)
+PASS  15 Creador agrega paradas a su ruta (route_stops)
+PASS  16a Variante/trazado/paradas ocultos para otro usuario mientras está pendiente
+PASS  16b …y visibles para su creador
+PASS  17 Creador NO puede auto-aprobar su ruta
+PASS  18 Admin aprueba la ruta
+PASS  19a Tras aprobar: otro usuario ve ruta, variantes, trazados y paradas
+PASS  19b Tras aprobar: anónimo ve la ruta
+PASS  20 Creador ya no edita directamente una ruta aprobada
+PASS  21 Anónimo lee paradas
+PASS  22 Otro usuario no edita paradas ajenas
+PASS  23 Usuario crea reporte
+PASS  24 Usuario NO puede crear reporte ya confirmado
+PASS  25a Reporte pendiente: lo ve su autor
+PASS  25b …no lo ve otro usuario ni anónimo
+PASS  26 Admin ve reportes con el nombre del autor (join a profiles, como AdminReportes)
+PASS  27 Admin confirma el reporte
+PASS  28 Reporte confirmado es público
+PASS  29 Usuario registra incidencia
+PASS  30 Incidencia activa es pública
+PASS  31 Admin actualiza incidencia con updated_at (columna que la app escribe)
+PASS  32 Usuario guarda favorito
+PASS  33 Favoritos son privados
+PASS  34 No puede guardar favoritos a nombre de otro
+PASS  35 Usuario inicia viaje
+PASS  36 Guarda puntos GPS de su viaje
+PASS  37 Otro usuario NO puede escribir en su viaje
+PASS  38 Viajes y GPS son privados
+PASS  39 Usuario pide cambio de ruta
+PASS  40 Solicitud: la ve su autor y el admin, no otro usuario
+PASS  41 Admin resuelve la solicitud
+PASS  42 get_nearby_stops con los nombres de parámetros de la app (500 m): solo paradas cercanas y activas
+      resultado 500 m: P1=0, Cerca=33
+PASS  43 Con 3000 m incluye la parada lejana, ordenada por distancia y en METROS
+      resultado 3000 m: P1=0, Cerca=33, Lejos=2002
+PASS  44 Función usable sin sesión y con radio por defecto
+PASS  45 last_sign_in_at se copia al perfil (AdminUsuarios)
+PASS  46 Anónimo no puede escribir
+PASS  47 Ninguna política consulta profiles directamente (todas usan is_admin())
+PASS  48 Toda tabla con RLS tiene al menos una política
+
+oldb: TODO OK

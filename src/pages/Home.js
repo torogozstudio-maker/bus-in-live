@@ -1,4 +1,5 @@
 import { authService } from '../services/auth.js';
+import { getSupabase } from '../services/supabase.js';
 import { routeService } from '../services/routes.js';
 import { stopService } from '../services/stops.js';
 import { reportService } from '../services/reports.js';

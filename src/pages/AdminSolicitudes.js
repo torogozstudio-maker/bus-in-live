@@ -87,6 +87,11 @@ function attachListeners() {
   modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
 }
 
+function closeRequestModal() {
+  const modal = document.getElementById('request-modal');
+  if (modal) modal.style.display = 'none';
+}
+
 async function loadAdminRequests() {
   const container = document.getElementById('admin-requests-list');
 

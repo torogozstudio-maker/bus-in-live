@@ -30,3 +30,7 @@ logs/
 
 # Nuxt
 .nuxt/
+
+# Archivos temporales de Vite y exportaciones de sesión
+vite.config.js.timestamp-*
+session-*.md
