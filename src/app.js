@@ -26,7 +26,19 @@ function createAppLayout() {
       <header class="app-header" id="app-header"></header>
       <div class="app-main-wrapper">
         <aside class="app-sidebar" id="app-sidebar" aria-label="Navegación principal"></aside>
-        <main class="app-main" id="app-main" role="main"></main>
+        <div class="app-content">
+          <main class="app-main" id="app-main" role="main"></main>
+          <footer class="app-footer">
+            <p>bus-in-live · Proyecto educativo de Torogoz Studio · Santa Ana, El Salvador</p>
+            <nav aria-label="Enlaces del pie de página">
+              <a href="/privacidad" data-link>Privacidad</a>
+              <span aria-hidden="true">·</span>
+              <a href="/reportar" data-link>Reportar</a>
+              <span aria-hidden="true">·</span>
+              <a href="https://github.com/torogozstudio-maker/bus-in-live/issues" target="_blank" rel="noopener noreferrer" aria-label="Contacto y código (abre en una pestaña nueva)">Contacto y código</a>
+            </nav>
+          </footer>
+        </div>
       </div>
       <nav class="app-bottom-nav" id="app-bottom-nav" aria-label="Navegación principal móvil"></nav>
       <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>

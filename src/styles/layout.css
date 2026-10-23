@@ -28,6 +28,57 @@
   padding: 0;
 }
 
+/* Contenido principal + pie de página */
+.app-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.app-footer {
+  padding: var(--spacing-6) var(--spacing-4);
+  margin-top: auto;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  background-color: var(--surface);
+}
+
+.app-footer p {
+  margin: 0 0 var(--spacing-2);
+}
+
+.app-footer nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.app-footer a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+/* En móvil, el pie debe quedar por encima de la barra inferior */
+@media (max-width: 767px) {
+  .app-footer {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-6));
+  }
+}
+
+/* La pantalla del mapa ocupa todo el alto: el pie no debe aparecer */
+body:has(.map-page) .app-footer {
+  display: none;
+}
+
 /* ---------- Sidebar (escritorio: fija a la izquierda) ---------- */
 .app-sidebar {
   position: sticky;
