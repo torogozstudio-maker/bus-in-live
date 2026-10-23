@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS routes (
   type TEXT DEFAULT 'regular' CHECK (type IN ('regular', 'especial')),
   status TEXT DEFAULT 'normal' CHECK (status IN ('normal', 'delay', 'detour', 'temporary_detour', 'suspended', 'out_of_service', 'insufficient_info')),
   validation_status TEXT DEFAULT 'pending' CHECK (validation_status IN ('pending', 'approved', 'rejected')),
+  rejection_reason TEXT,
   city TEXT DEFAULT 'Santa Ana',
   created_by UUID REFERENCES profiles(id),
   created_at TIMESTAMPTZ DEFAULT now(),

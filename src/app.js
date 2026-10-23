@@ -8,6 +8,9 @@ import { renderHeader } from './components/Header.js';
 import { renderBottomNav } from './components/BottomNav.js';
 import { renderSidebar } from './components/Sidebar.js';
 import { themeService } from './services/theme.js';
+import { routeService } from './services/routes.js';
+import { stopService } from './services/stops.js';
+import { getCurrentCity } from './config/city.js';
 
 let appContainer = null;
 let isMobile = false;
@@ -73,8 +76,9 @@ const PAGE_TITLES = [
   ['/historial', 'Historial de viajes'],
   ['/notificaciones', 'Notificaciones'],
   ['/rutas/crear', 'Crear ruta'],
-  ['/rutas/editar', 'Editar ruta'],
   ['/reportar/desvio', 'Reportar desvío'],
+  ['/terminos', 'Términos y condiciones'],
+  ['/acerca', 'Acerca de bus-in-live'],
   ['/admin', 'Panel de administración'],
 ];
 
@@ -160,6 +164,25 @@ function attachLayoutListeners() {
 
   applySidebarPreference();
 
+  // Búsqueda del header (solo escritorio). Se registra por asignación directa para
+  // que cada re-render del layout reemplace los listeners viejos.
+  const headerSearch = document.getElementById('header-search');
+  const headerResults = document.getElementById('header-search-results');
+  if (headerSearch && headerResults) {
+    let searchDebounce = null;
+    headerSearch.oninput = (e) => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => handleHeaderSearch(e.target.value, headerResults), 300);
+    };
+    headerSearch.onfocus = () => {
+      if (headerSearch.value.trim()) handleHeaderSearch(headerSearch.value, headerResults);
+    };
+    headerResults.onclick = (e) => {
+      const a = e.target.closest('[data-link]');
+      if (a) headerResults.style.display = 'none';
+    };
+  }
+
   const navLinks = document.querySelectorAll('[data-nav-link]');
   navLinks.forEach(link => {
     link.onclick = (e) => {
@@ -217,6 +240,39 @@ function closeSidebar() {
   sidebar.classList.remove('open');
   overlay.classList.remove('visible');
   document.body.style.overflow = '';
+}
+
+async function handleHeaderSearch(query, resultsEl) {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) {
+    resultsEl.style.display = 'none';
+    return;
+  }
+  try {
+    const [{ data: routes }, { data: stops }] = await Promise.all([
+      routeService.getRoutes({ city: getCurrentCity(), search: q }),
+      stopService.getStops({ search: q })
+    ]);
+    const items = [
+      ...(routes || []).map(r => ({ href: `/rutas/${r.id}`, label: `${r.code} — ${r.name}`, type: 'Ruta' })),
+      ...(stops || []).map(s => ({ href: `/paradas/${s.id}`, label: s.name, type: 'Parada' }))
+    ].slice(0, 8);
+
+    if (items.length === 0) {
+      resultsEl.innerHTML = '<div class="search-result-item" style="padding:10px;color:var(--muted);">Sin resultados</div>';
+    } else {
+      resultsEl.innerHTML = items.map(item => `
+        <a href="${item.href}" data-link class="search-result-item" style="display:flex;gap:8px;align-items:center;padding:8px 12px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);">
+          <span class="badge" style="font-size:10px;">${item.type}</span>
+          <span>${item.label}</span>
+        </a>
+      `).join('');
+    }
+    resultsEl.style.display = 'block';
+  } catch (err) {
+    console.error('Header search error:', err);
+    resultsEl.style.display = 'none';
+  }
 }
 
 let escapeBound = false;
@@ -292,109 +348,104 @@ export function createApp() {
 
   const getMain = () => document.getElementById('app-main');
 
+  // Limpieza de la página anterior antes de renderizar la nueva.
+  let cleanupPrev = null;
+  const render = async (importFn, route) => {
+    if (typeof cleanupPrev === 'function') {
+      try { cleanupPrev(); } catch (e) { /* ignorar errores de limpieza */ }
+      cleanupPrev = null;
+    }
+    const mod = await importFn();
+    await mod.renderPage(getMain(), route);
+    if (typeof mod.cleanup === 'function') cleanupPrev = mod.cleanup;
+  };
+
   router.add('/', async (route) => {
-    const { renderPage: render } = await import('./pages/Home.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Home.js'), route);
   });
   router.add('/login', async (route) => {
-    const { renderPage: render } = await import('./pages/Login.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Login.js'), route);
   });
   router.add('/register', async (route) => {
-    const { renderPage: render } = await import('./pages/Register.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Register.js'), route);
   });
   router.add('/reset-password', async (route) => {
-    const { renderPage: render } = await import('./pages/ResetPassword.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/ResetPassword.js'), route);
   });
   router.add('/auth/callback', async (route) => {
-    const { renderPage: render } = await import('./pages/AuthCallback.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/AuthCallback.js'), route);
   });
   router.add('/mapa', async (route) => {
-    const { renderPage: render } = await import('./pages/Mapa.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Mapa.js'), route);
   });
   router.add('/rutas', async (route) => {
-    const { renderPage: render } = await import('./pages/Rutas.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Rutas.js'), route);
   });
-  router.add('/rutas/:id', async (route) => {
-    const { renderPage: render } = await import('./pages/RutaDetalle.js');
-    await render(getMain(), route);
-  });
-  router.add('/paradas', async (route) => {
-    const { renderPage: render } = await import('./pages/Paradas.js');
-    await render(getMain(), route);
-  });
-  router.add('/paradas/:id', async (route) => {
-    const { renderPage: render } = await import('./pages/ParadaDetalle.js');
-    await render(getMain(), route);
-  });
-  router.add('/paradas-cercanas', async (route) => {
-    const { renderPage: render } = await import('./pages/ParadasCercanas.js');
-    await render(getMain(), route);
-  });
-  router.add('/viajar', async (route) => {
-    const { renderPage: render } = await import('./pages/Viajar.js');
-    await render(getMain(), route);
-  });
-  router.add('/reportar', async (route) => {
-    const { renderPage: render } = await import('./pages/Reportar.js');
-    await render(getMain(), route);
-  });
-  router.add('/reportar/desvio', async (route) => {
-    const { renderPage: render } = await import('./pages/Proximamente.js');
-    await render(getMain(), { ...route, params: { title: 'Reportar desvío', text: 'Esta función estará disponible próximamente. Por ahora puedes reportar un desvío desde la página de Reportar.' } });
-  });
+  // IMPORTANTE: /rutas/crear y /rutas/:id/editar deben ir ANTES de /rutas/:id
+  // para que el router no las interprete como un id.
   router.add('/rutas/crear', async (route) => {
-    const { renderPage: render } = await import('./pages/Proximamente.js');
-    await render(getMain(), { ...route, params: { title: 'Crear ruta', text: 'Esta función estará disponible próximamente para colaboradores verificados.' } });
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Crear ruta', text: 'Esta función estará disponible próximamente para colaboradores verificados.' } });
   });
   router.add('/rutas/:id/editar', async (route) => {
-    const { renderPage: render } = await import('./pages/Proximamente.js');
-    await render(getMain(), { ...route, params: { title: 'Editar ruta', text: 'Esta función estará disponible próximamente para administradores.' } });
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Editar ruta', text: 'Esta función estará disponible próximamente para administradores.' } });
+  });
+  router.add('/rutas/:id', async (route) => {
+    await render(() => import('./pages/RutaDetalle.js'), route);
+  });
+  router.add('/paradas', async (route) => {
+    await render(() => import('./pages/Paradas.js'), route);
+  });
+  router.add('/paradas/:id', async (route) => {
+    await render(() => import('./pages/ParadaDetalle.js'), route);
+  });
+  router.add('/paradas-cercanas', async (route) => {
+    await render(() => import('./pages/ParadasCercanas.js'), route);
+  });
+  router.add('/viajar', async (route) => {
+    await render(() => import('./pages/Viajar.js'), route);
+  });
+  router.add('/reportar', async (route) => {
+    await render(() => import('./pages/Reportar.js'), route);
+  });
+  router.add('/reportar/desvio', async (route) => {
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Reportar desvío', text: 'Esta función estará disponible próximamente. Por ahora puedes reportar un desvío desde la página de Reportar.' } });
   });
   router.add('/favoritos', async (route) => {
-    const { renderPage: render } = await import('./pages/Favoritos.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Favoritos.js'), route);
   });
   router.add('/historial', async (route) => {
-    const { renderPage: render } = await import('./pages/Proximamente.js');
-    await render(getMain(), { ...route, params: { title: 'Historial de viajes', text: 'Tu historial de viajes estará disponible en una próxima actualización.' } });
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Historial de viajes', text: 'Tu historial de viajes estará disponible en una próxima actualización.' } });
   });
   router.add('/perfil', async (route) => {
-    const { renderPage: render } = await import('./pages/Perfil.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Perfil.js'), route);
   });
   router.add('/privacidad', async (route) => {
-    const { renderPage: render } = await import('./pages/Privacidad.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/Privacidad.js'), route);
   });
   router.add('/notificaciones', async (route) => {
-    const { renderPage: render } = await import('./pages/Proximamente.js');
-    await render(getMain(), { ...route, params: { title: 'Notificaciones', text: 'Las notificaciones estarán disponibles en una próxima actualización.' } });
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Notificaciones', text: 'Las notificaciones estarán disponibles en una próxima actualización.' } });
+  });
+  // Páginas informativas enlazadas desde Home y Register
+  router.add('/terminos', async (route) => {
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Términos y condiciones', text: 'Los términos y condiciones completos estarán disponibles próximamente. Al usar bus-in-live aceptas que los datos que compartes se usan de forma anónima para mejorar el transporte público.' } });
+  });
+  router.add('/acerca', async (route) => {
+    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Acerca de bus-in-live', text: 'bus-in-live es un proyecto educativo de Torogoz Studio para mejorar el transporte público en Santa Ana, El Salvador mediante la colaboración de la comunidad.' } });
   });
   router.add('/admin', async (route) => {
-    const { renderPage: render } = await import('./pages/AdminDashboard.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/AdminDashboard.js'), route);
   });
   router.add('/admin/rutas', async (route) => {
-    const { renderPage: render } = await import('./pages/AdminRutas.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/AdminRutas.js'), route);
   });
   router.add('/admin/reportes', async (route) => {
-    const { renderPage: render } = await import('./pages/AdminReportes.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/AdminReportes.js'), route);
   });
   router.add('/admin/incidencias', async (route) => {
-    const { renderPage: render } = await import('./pages/AdminIncidencias.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/AdminIncidencias.js'), route);
   });
   router.add('/admin/solicitudes', async (route) => {
-    const { renderPage: render } = await import('./pages/AdminSolicitudes.js');
-    await render(getMain(), route);
+    await render(() => import('./pages/AdminSolicitudes.js'), route);
   });
 
   router.notFound(async () => {

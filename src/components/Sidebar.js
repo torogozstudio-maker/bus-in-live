@@ -1,4 +1,5 @@
 import { authService } from '../services/auth.js';
+import { stripBase } from '../utils/router.js';
 
 const mainNavItems = [
   { href: '/', label: 'Inicio', icon: 'home' },
@@ -115,7 +116,8 @@ export function renderSidebar() {
 }
 
 function isCurrentRoute(href) {
-  return window.location.pathname === href || window.location.pathname.startsWith(href + '/');
+  const path = stripBase(window.location.pathname);
+  return path === href || (href !== '/' && path.startsWith(href + '/'));
 }
 
 function getIcon(name) {

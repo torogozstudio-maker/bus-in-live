@@ -10,7 +10,13 @@ export const stopService = {
       .from('stops')
       .select(`
         *,
-        route_stops (route_id, variant_id, sequence, direction)
+        route_stops (
+          route_id,
+          variant_id,
+          sequence,
+          direction,
+          routes (id, code, name, origin, destination, type)
+        )
       `)
       .eq('status', 'active');
 

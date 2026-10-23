@@ -9,7 +9,7 @@ export default defineConfig({
   publicDir: 'public',
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       input: {
         main: 'index.html'

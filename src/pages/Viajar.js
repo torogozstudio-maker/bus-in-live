@@ -15,7 +15,9 @@ let currentSession = null;
 let currentPosition = null;
 let positionUpdateInterval = null;
 let map = null;
-let L = null; // Leaflet se carga bajo demanda (se asigna donde se importa) y se comparte con updateTripMap
+let L = null;
+let tripUserMarker = null;
+let cleanupCallbacks = [];
 
 export async function renderPage(container, route) {
   const preSelectedRouteId = route.query.get('route');
@@ -222,11 +224,13 @@ function attachListeners() {
     if (routeSearch.value.trim()) searchRoutesForTrip(routeSearch.value);
   });
 
-  document.addEventListener('click', (e) => {
+  const onDocClick = (e) => {
     if (!routeSearch.contains(e.target) && !routeResults.contains(e.target)) {
       routeResults.style.display = 'none';
     }
-  });
+  };
+  document.addEventListener('click', onDocClick);
+  cleanupCallbacks.push(() => document.removeEventListener('click', onDocClick));
 
   consentCheckbox.addEventListener('change', (e) => {
     startBtn.disabled = !e.target.checked;
@@ -239,29 +243,47 @@ function attachListeners() {
   startBtn.addEventListener('click', startTrip);
   endTripBtn.addEventListener('click', endTrip);
 
-  eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
+  const unsubPos = eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
     currentPosition = position;
     updateTripDisplay(position);
   });
+  cleanupCallbacks.push(unsubPos);
 
-  eventBus.on(GEOLOCATION_EVENTS.ERROR, (error) => {
-    document.getElementById('trip-gps-status').textContent = 'Error GPS';
-    document.getElementById('trip-gps-status').style.color = 'var(--error)';
+  const unsubErr = eventBus.on(GEOLOCATION_EVENTS.ERROR, () => {
+    const el = document.getElementById('trip-gps-status');
+    if (el) {
+      el.textContent = 'Error GPS';
+      el.style.color = 'var(--error)';
+    }
   });
+  cleanupCallbacks.push(unsubErr);
 
-  eventBus.on(TRIP_EVENTS.STARTED, (session) => {
+  const unsubStarted = eventBus.on(TRIP_EVENTS.STARTED, (session) => {
     currentSession = session;
     showActiveTrip();
   });
+  cleanupCallbacks.push(unsubStarted);
 
-  eventBus.on(TRIP_EVENTS.ENDED, () => {
+  const unsubEnded = eventBus.on(TRIP_EVENTS.ENDED, () => {
     currentSession = null;
     showSetup();
   });
+  cleanupCallbacks.push(unsubEnded);
+}
+
+// Limpieza al salir de la página: listeners, intervalos y mapa.
+export function cleanup() {
+  cleanupCallbacks.forEach(fn => { try { fn(); } catch (e) { /* ya removido */ } });
+  cleanupCallbacks = [];
+  clearTimeout(searchDebounce);
+  stopPositionUpdates();
+  if (map) { map.remove(); map = null; }
+  tripUserMarker = null;
+  geolocationService.stopTracking();
 }
 
 async function loadRoutesForTrip(preSelectedId) {
-  const { data: routes } = await routeService.getRoutes({ city: getCurrentCity(), status: 'normal' });
+  const { data: routes } = await routeService.getRoutes({ city: getCurrentCity() });
 
   if (preSelectedId) {
     const route = routes.find(r => r.id === preSelectedId);
@@ -471,8 +493,8 @@ function updateTripMap(position) {
 
   const latlng = [position.latitude, position.longitude];
 
-  if (!window.tripUserMarker) {
-    window.tripUserMarker = L.marker(latlng, {
+  if (!tripUserMarker) {
+    tripUserMarker = L.marker(latlng, {
       icon: L.divIcon({
         className: 'custom-marker custom-marker-user',
         html: '<div class="user-marker-pulse"></div><div class="user-marker-dot"></div>',
@@ -481,7 +503,7 @@ function updateTripMap(position) {
       })
     }).addTo(map);
   } else {
-    window.tripUserMarker.setLatLng(latlng);
+    tripUserMarker.setLatLng(latlng);
   }
 
   map.setView(latlng, map.getZoom());

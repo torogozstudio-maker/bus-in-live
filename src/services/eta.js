@@ -46,24 +46,30 @@ function isPositionOnRoute(position, routeShape, thresholdMeters = 100) {
 }
 
 function pointToLineDistance(lat, lon, lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const φ = lat * Math.PI / 180;
-  const λ = lon * Math.PI / 180;
-  const φ1 = lat1 * Math.PI / 180;
-  const λ1 = lon1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const λ2 = lon2 * Math.PI / 180;
-
+  // Proyección del punto sobre el segmento en grados, luego distancia haversine.
   const d = haversineDistance(lat1, lon1, lat2, lon2);
   if (d === 0) return haversineDistance(lat, lon, lat1, lon1);
 
-  const t = ((φ - φ1) * (φ2 - φ1) + (λ - λ1) * (λ2 - λ1)) / (d * d / R / R);
-  const tClamped = Math.max(0, Math.min(1, t));
+  // Factor de conversión aproximado grados→metros para la proyección
+  const latRad = lat1 * Math.PI / 180;
+  const mPerDegLat = 111320;
+  const mPerDegLon = 111320 * Math.cos(latRad);
 
-  const closestLat = lat1 + tClamped * (lat2 - lat1);
-  const closestLon = lon1 + tClamped * (lon2 - lon1);
+  // Vector del segmento en metros
+  const dx = (lon2 - lon1) * mPerDegLon;
+  const dy = (lat2 - lat1) * mPerDegLat;
 
-  return haversineDistance(lat, lon, closestLat * 180 / Math.PI, closestLon * 180 / Math.PI);
+  // Vector punto→inicio en metros
+  const px = (lon - lon1) * mPerDegLon;
+  const py = (lat - lat1) * mPerDegLat;
+
+  const segLenSq = dx * dx + dy * dy;
+  const t = Math.max(0, Math.min(1, (px * dx + py * dy) / segLenSq));
+
+  const closestLat = lat1 + t * (lat2 - lat1);
+  const closestLon = lon1 + t * (lon2 - lon1);
+
+  return haversineDistance(lat, lon, closestLat, closestLon);
 }
 
 function findNearestSegment(position, routeShape) {
@@ -231,8 +237,8 @@ export const etaService = {
     const routeShape = shapeResult.data;
     const observations = obsResult.data || [];
 
+    // bus_observations no tiene columna accuracy; filtrar solo por velocidad válida
     const validObservations = observations.filter(obs =>
-      obs.accuracy && obs.accuracy <= 100 &&
       isValidSpeed(obs.speed)
     );
 
@@ -250,8 +256,7 @@ export const etaService = {
       if (result.confidence === 'high') result.confidence = 'medium';
     }
 
-    result.confidence = calculateConfidence(validObservations, routeShape);
-
+    // No sobrescribir el confidence ya calculado dentro de estimateETA
     return result;
   },
 
@@ -259,13 +264,21 @@ export const etaService = {
     const supabase = getSupabase();
     if (!supabase) return { frequency: null, confidence: 'insufficient', observations: 0 };
 
-    const { data: observations } = await supabase
+    let query = supabase
       .from('bus_observations')
       .select('observed_at')
       .eq('route_id', routeId)
-      .eq('variant_id', variantId)
       .gte('observed_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .order('observed_at', { ascending: true });
+
+    // .eq no compara contra NULL en PostgREST; usar .is() cuando variantId es null
+    if (variantId) {
+      query = query.eq('variant_id', variantId);
+    } else {
+      query = query.is('variant_id', null);
+    }
+
+    const { data: observations } = await query;
 
     if (!observations || observations.length < 3) {
       return { frequency: null, confidence: 'insufficient', observations: observations?.length || 0 };

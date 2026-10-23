@@ -31,13 +31,19 @@ export const favoriteService = {
       return { data: null, error: 'Debe especificar route_id o stop_id' };
     }
 
+    // Borrar favorito previo idéntico (evita conflictos de unique con NULLs en Postgres)
+    let del = supabase.from('favorites').delete().eq('user_id', user.id);
+    if (item.route_id) del = del.eq('route_id', item.route_id);
+    if (item.stop_id) del = del.eq('stop_id', item.stop_id);
+    await del;
+
     const { data, error } = await supabase
       .from('favorites')
-      .upsert({
+      .insert({
         user_id: user.id,
-        route_id: item.route_id,
-        stop_id: item.stop_id
-      }, { onConflict: 'user_id,route_id,stop_id' })
+        route_id: item.route_id || null,
+        stop_id: item.stop_id || null
+      })
       .select()
       .single();
 

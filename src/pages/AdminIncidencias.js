@@ -2,6 +2,7 @@ import { adminService } from '../services/admin.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { getCurrentCity } from '../config/city.js';
 
 let currentFilters = { status: '', routeId: '' };
 
@@ -149,7 +150,7 @@ function attachListeners() {
 }
 
 async function loadRoutesForIncidentSelect() {
-  const { data: routes } = await (await import('../services/routes.js')).routeService.getRoutes({ city: 'Santa Ana', status: 'normal' });
+  const { data: routes } = await (await import('../services/routes.js')).routeService.getRoutes({ city: getCurrentCity(), status: 'normal' });
   const routeSelect = document.getElementById('incident-route');
   routes?.forEach(route => {
     routeSelect.innerHTML += `<option value="${route.id}">${route.code} - ${route.name}</option>`;

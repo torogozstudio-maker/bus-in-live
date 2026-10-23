@@ -1,4 +1,5 @@
 import { authService } from '../services/auth.js';
+import { stripBase } from '../utils/router.js';
 
 const bottomNavItems = [
   { href: '/', label: 'Inicio', icon: 'home' },
@@ -31,7 +32,8 @@ export function renderBottomNav() {
 }
 
 function isCurrentRoute(href) {
-  return window.location.pathname === href || window.location.pathname.startsWith(href + '/');
+  const path = stripBase(window.location.pathname);
+  return path === href || (href !== '/' && path.startsWith(href + '/'));
 }
 
 function getIcon(name) {

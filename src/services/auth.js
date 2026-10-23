@@ -197,12 +197,31 @@ export const authService = {
   async updateProfile(updates) {
     const supabase = getSupabase();
     if (!supabase) throw new Error('Supabase not configured');
+    const uid = currentUser?.id;
+    if (!uid) throw new Error('No hay usuario autenticado');
 
+    // 1. Actualizar user_metadata (para que Supabase Auth lo refleje)
     const { data, error } = await supabase.auth.updateUser({
       data: updates
     });
-
     if (error) throw error;
+
+    // 2. Actualizar la tabla profiles (nombre y avatar son las fuentes de verdad en la BD)
+    const profileUpdate = {};
+    if (updates.full_name !== undefined || updates.name !== undefined) {
+      profileUpdate.nombre = updates.full_name || updates.name;
+    }
+    if (updates.avatar_url !== undefined || updates.avatar !== undefined) {
+      profileUpdate.avatar = updates.avatar_url || updates.avatar;
+    }
+    if (Object.keys(profileUpdate).length > 0) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(profileUpdate)
+        .eq('id', uid);
+      if (profileError) console.warn('No se pudo actualizar profiles:', profileError.message);
+    }
+
     currentUser = mapUser(data.user);
     eventBus.emit(AUTH_EVENTS.USER_UPDATED, currentUser);
     return currentUser;

@@ -11,7 +11,8 @@ export const routeService = {
       .select(`
         *,
         route_variants (id, name, variant_type, direct, active),
-        stops:route_stops (stops (id, name, latitude, longitude, stop_type))
+        stops:route_stops (stops (id, name, latitude, longitude, stop_type)),
+        route_shapes (geometry, version, active)
       `)
       .is('deleted_at', null)
       .eq('validation_status', 'approved');

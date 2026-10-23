@@ -87,7 +87,11 @@ export const adminService = {
 
     const { data, error } = await supabase
       .from('routes')
-      .update({ validation_status: 'rejected', updated_at: new Date().toISOString() })
+      .update({
+        validation_status: 'rejected',
+        rejection_reason: reason || null,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();

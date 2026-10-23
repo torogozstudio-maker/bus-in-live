@@ -72,6 +72,16 @@ function attachListeners() {
   const btnLoading = submitBtn.querySelector('.btn-loading');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
+  const rememberCheckbox = form.querySelector('input[name="remember"]');
+
+  // Precargar email si "Recordarme" estaba activo
+  try {
+    const savedEmail = localStorage.getItem('bus-in-live-remember-email');
+    if (savedEmail && emailInput) {
+      emailInput.value = savedEmail;
+      if (rememberCheckbox) rememberCheckbox.checked = true;
+    }
+  } catch (e) { /* sin localStorage */ }
 
   // Limpiar avisos al corregir
   emailInput.addEventListener('input', () => clearFieldError('email'));
@@ -108,6 +118,14 @@ function attachListeners() {
 
     try {
       await authService.signIn(email, password);
+      // Recordarme: guardar o borrar email en localStorage
+      try {
+        if (rememberCheckbox?.checked) {
+          localStorage.setItem('bus-in-live-remember-email', email);
+        } else {
+          localStorage.removeItem('bus-in-live-remember-email');
+        }
+      } catch (e) { /* sin localStorage */ }
       toastService.success('Bienvenido de vuelta');
       router.navigate('/');
     } catch (error) {

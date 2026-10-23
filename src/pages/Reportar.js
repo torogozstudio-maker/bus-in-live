@@ -64,7 +64,7 @@ export async function renderPage(container, route) {
           <div class="card-body">
             <div class="form-group">
               <label for="report-stop-search" class="form-label">Buscar parada</label>
-              <input type="text" id="report-stop-search" class="form-input" placeholder="Nombre de la parada..." autocomplete="off" aria-describedby="report-route-search-error">
+              <input type="text" id="report-stop-search" class="form-input" placeholder="Nombre de la parada..." autocomplete="off">
               <div id="report-stop-results" class="search-results" style="display: none;"></div>
             </div>
             <div id="selected-report-stop" class="selected-route-display" style="display: none;"></div>
@@ -78,16 +78,20 @@ export async function renderPage(container, route) {
           <div class="card-body">
             <div id="report-location-status" class="location-status">
               <div class="status-content">
-                <div class="status-icon loading"></div>
+                <div class="status-icon"></div>
                 <div class="status-text">
-                  <strong>Obteniendo ubicación...</strong>
-                  <span>Usaremos tu posición actual como referencia</span>
+                  <strong>Ubicación opcional</strong>
+                  <span>Puedes compartir tu posición como referencia del problema</span>
                 </div>
               </div>
             </div>
-            <div class="form-group">
+            <button type="button" class="btn btn-secondary" id="get-location-btn" style="margin-top: var(--spacing-3);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
+              Usar mi ubicación actual
+            </button>
+            <div class="form-group" style="margin-top: var(--spacing-4);">
               <label for="report-location-desc" class="form-label">Descripción de la ubicación (opcional)</label>
-              <textarea id="report-location-desc" class="form-input" rows="2" placeholder="Ej: Esquina de la 15 Av. Norte y 25 Calle Poniente, frente al semáforo"></textarea>
+              <textarea id="report-location-desc" name="reportLocationDesc" class="form-input" rows="2" placeholder="Ej: Esquina de la 15 Av. Norte y 25 Calle Poniente, frente al semáforo"></textarea>
             </div>
           </div>
         </div>
@@ -99,7 +103,7 @@ export async function renderPage(container, route) {
           <div class="card-body">
             <div class="form-group">
               <label for="report-description" class="form-label">Describe lo que ocurre *</label>
-              <textarea id="report-description" class="form-input" rows="4" required placeholder="Describe el problema con la mayor cantidad de detalles posible..." aria-describedby="report-description-error"></textarea>
+              <textarea id="report-description" name="reportDescription" class="form-input" rows="4" required placeholder="Describe el problema con la mayor cantidad de detalles posible..." aria-describedby="report-description-error"></textarea>
               <p class="field-error" id="report-description-error" role="alert"></p>
             </div>
             <div class="form-group">
@@ -153,7 +157,32 @@ export async function renderPage(container, route) {
     await preSelectStop(preStopId);
   }
 
-  initializeLocation();
+  // La ubicación solo se pide con consentimiento explícito (botón), no automáticamente.
+  const getLocationBtn = document.getElementById('get-location-btn');
+  if (getLocationBtn) {
+    getLocationBtn.addEventListener('click', async () => {
+      getLocationBtn.disabled = true;
+      getLocationBtn.textContent = 'Obteniendo ubicación...';
+      try {
+        const position = await geolocationService.getCurrentPosition({ timeout: 10000 });
+        userLocation = position;
+        updateLocationStatus(position);
+        getLocationBtn.style.display = 'none';
+      } catch (error) {
+        document.getElementById('report-location-status').innerHTML = `
+          <div class="status-content">
+            <div class="status-icon error"></div>
+            <div class="status-text">
+              <strong>No se pudo obtener tu ubicación</strong>
+              <span>Puedes describir la ubicación manualmente</span>
+            </div>
+          </div>
+        `;
+        getLocationBtn.disabled = false;
+        getLocationBtn.textContent = 'Usar mi ubicación actual';
+      }
+    });
+  }
 }
 
 let searchDebounce = null;
@@ -339,24 +368,6 @@ async function preSelectRoute(routeId) {
 async function preSelectStop(stopId) {
   const { data: stop } = await stopService.getStopById(stopId);
   if (stop) selectStopForReport(stop);
-}
-
-async function initializeLocation() {
-  try {
-    const position = await geolocationService.getCurrentPosition({ timeout: 10000 });
-    userLocation = position;
-    updateLocationStatus(position);
-  } catch (error) {
-    document.getElementById('report-location-status').innerHTML = `
-      <div class="status-content">
-        <div class="status-icon error"></div>
-        <div class="status-text">
-          <strong>No se pudo obtener ubicación automática</strong>
-          <span>Puedes describir la ubicación manualmente</span>
-        </div>
-      </div>
-    `;
-  }
 }
 
 function updateLocationStatus(position) {

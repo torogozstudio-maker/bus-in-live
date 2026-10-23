@@ -112,8 +112,8 @@ function attachListeners() {
     if (!password) {
       setFieldError('password', 'Ingresa una contraseña');
       valid = false;
-    } else if (password.length < 6) {
-      setFieldError('password', 'La contraseña debe tener al menos 6 caracteres');
+    } else if (password.length < 8) {
+      setFieldError('password', 'La contraseña debe tener al menos 8 caracteres');
       valid = false;
     }
     if (!confirmPassword) {
@@ -121,6 +121,11 @@ function attachListeners() {
       valid = false;
     } else if (password !== confirmPassword) {
       setFieldError('confirmPassword', 'Las contraseñas no coinciden');
+      valid = false;
+    }
+    const termsCheckbox = form.querySelector('input[name="terms"]');
+    if (termsCheckbox && !termsCheckbox.checked) {
+      toastService.error('Debes aceptar los términos y condiciones');
       valid = false;
     }
     if (!valid) {

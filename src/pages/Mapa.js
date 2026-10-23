@@ -10,6 +10,7 @@ import { toastService } from '../services/toast.js';
 import { getCurrentCity } from '../config/city.js';
 
 let map = null;
+let L = null;
 let routesLayer = null;
 let stopsLayer = null;
 let observationsLayer = null;
@@ -21,6 +22,7 @@ let showStops = true;
 let showBuses = true;
 let showIncidents = true;
 let userLocation = null;
+let cleanupCallbacks = [];
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -54,17 +56,17 @@ export async function renderPage(container) {
           </div>
           <div class="panel-body">
             <label class="layer-toggle">
-              <input type="checkbox" id="layer-stops" checked>
+              <input type="checkbox" id="layer-stops" checked aria-label="Mostrar paradas en el mapa">
               <span class="toggle-slider"></span>
               <span>Paradas</span>
             </label>
             <label class="layer-toggle">
-              <input type="checkbox" id="layer-buses" checked>
+              <input type="checkbox" id="layer-buses" checked aria-label="Mostrar buses estimados en el mapa">
               <span class="toggle-slider"></span>
               <span>Buses estimados</span>
             </label>
             <label class="layer-toggle">
-              <input type="checkbox" id="layer-incidents" checked>
+              <input type="checkbox" id="layer-incidents" checked aria-label="Mostrar incidencias en el mapa">
               <span class="toggle-slider"></span>
               <span>Incidencias</span>
             </label>
@@ -108,7 +110,7 @@ export async function renderPage(container) {
 }
 
 async function initMap() {
-  const L = await loadLeaflet();
+  L = await loadLeaflet();
 
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
@@ -185,14 +187,28 @@ function attachListeners() {
     toggleLayer(incidentsLayer, showIncidents);
   });
 
-  eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
+  const unsubPos = eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
     userLocation = position;
     updateUserMarker(position);
   });
+  cleanupCallbacks.push(unsubPos);
 
-  eventBus.on(GEOLOCATION_EVENTS.ERROR, (error) => {
+  const unsubErr = eventBus.on(GEOLOCATION_EVENTS.ERROR, (error) => {
     toastService.error(error.message);
   });
+  cleanupCallbacks.push(unsubErr);
+}
+
+// Limpieza al salir de la página
+export function cleanup() {
+  cleanupCallbacks.forEach(fn => { try { fn(); } catch (e) { /* ya removido */ } });
+  cleanupCallbacks = [];
+  if (map) {
+    map.remove();
+    map = null;
+  }
+  userMarker = null;
+  L = null;
 }
 
 async function handleSearch(query) {
@@ -244,7 +260,6 @@ async function loadInitialData() {
 
 async function loadRoutes() {
   const { data: routes } = await routeService.getRoutes({ city: getCurrentCity() });
-  const L = await loadLeaflet();
 
   routesLayer.clearLayers();
 
@@ -270,7 +285,6 @@ async function loadRoutes() {
 
 async function loadIncidents() {
   const { data: incidents } = await incidentService.getIncidents({ activeOnly: true });
-  const L = await loadLeaflet();
 
   incidentsLayer.clearLayers();
 
@@ -292,8 +306,6 @@ async function selectRoute(routeId) {
 
   const { data: route } = await routeService.getRouteById(routeId);
   if (!route) return;
-
-  const L = await loadLeaflet();
 
   routesLayer.clearLayers();
   stopsLayer.clearLayers();
@@ -345,12 +357,14 @@ async function selectRoute(routeId) {
   await loadRouteObservations(routeId);
 
   showRouteInfoPanel(route);
-  map.fitBounds(routesLayer.getBounds(), { padding: [20, 20] });
+  const bounds = routesLayer.getBounds();
+  if (bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [20, 20] });
+  }
 }
 
 async function loadRouteObservations(routeId) {
   const { data: observations } = await routeService.getRouteObservations(routeId, selectedVariantId);
-  const L = await loadLeaflet();
 
   observationsLayer.clearLayers();
 
@@ -447,6 +461,32 @@ function showStopInfo(stop, route) {
   `;
 
   panel.style.display = 'block';
+
+  // Botón de favorito: alternar y actualizar el texto
+  const favBtn = document.getElementById('favorite-stop-btn');
+  if (favBtn) {
+    favBtn.addEventListener('click', async () => {
+      const { favoriteService } = await import('../services/favorites.js');
+      favBtn.disabled = true;
+      try {
+        const isFav = await favoriteService.isFavorite(null, stop.id);
+        if (isFav) {
+          await favoriteService.removeFavorite(null, stop.id);
+          favBtn.innerHTML = `${icon('star', 16)} Favorito`;
+          toastService.success('Quitado de favoritos');
+        } else {
+          await favoriteService.addFavorite({ stop_id: stop.id });
+          favBtn.innerHTML = `${icon('star', 16)} ★ Favorito`;
+          toastService.success('Agregado a favoritos');
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+        toastService.error('No se pudo actualizar el favorito');
+      } finally {
+        favBtn.disabled = false;
+      }
+    });
+  }
 }
 
 function onMapClick(e) {
@@ -467,14 +507,19 @@ function locateUser() {
 }
 
 function updateUserMarker(position) {
-  if (!map) return;
+  if (!map || !L) return;
 
   if (userMarker) {
     userMarker.setLatLng([position.latitude, position.longitude]);
-    userMarker.getElement().querySelector('.user-marker-accuracy').style.width = `${position.accuracy * 2}px`;
-    userMarker.getElement().querySelector('.user-marker-accuracy').style.height = `${position.accuracy * 2}px`;
+    const el = userMarker.getElement();
+    if (el) {
+      const acc = el.querySelector('.user-marker-accuracy');
+      if (acc) {
+        acc.style.width = `${position.accuracy * 2}px`;
+        acc.style.height = `${position.accuracy * 2}px`;
+      }
+    }
   } else {
-    const L = window.L;
     userMarker = L.marker([position.latitude, position.longitude], {
       icon: L.divIcon({
         className: 'custom-marker custom-marker-user',
@@ -499,8 +544,7 @@ function toggleLayer(layer, show) {
 }
 
 function createBusIcon(confidence) {
-  if (!window.L) return null;
-  const L = window.L;
+  if (!L) return undefined;
   const colors = {
     high: '#16A34A',
     medium: '#EAB308',
@@ -518,8 +562,7 @@ function createBusIcon(confidence) {
 }
 
 function createStopIcon(type) {
-  if (!window.L) return null;
-  const L = window.L;
+  if (!L) return undefined;
   const colors = {
     terminal: '#16A34A',
     start: '#2563EB',
@@ -537,8 +580,7 @@ function createStopIcon(type) {
 }
 
 function createIncidentIcon(type) {
-  if (!window.L) return null;
-  const L = window.L;
+  if (!L) return undefined;
   return L.divIcon({
     className: 'custom-marker custom-marker-incident',
     html: `<div style="color: #DC2626; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${icon(type, 22)}</div>`,

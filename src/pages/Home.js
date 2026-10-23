@@ -230,7 +230,10 @@ function renderFavorites(favorites) {
   }
 
   section.style.display = 'block';
-  container.innerHTML = favorites.slice(0, 4).map(fav => `
+  container.innerHTML = favorites.slice(0, 4).map(fav => {
+    const r = fav.routes;
+    const s = fav.stops;
+    return `
     <a href="${fav.route_id ? `/rutas/${fav.route_id}` : `/paradas/${fav.stop_id}`}" class="favorite-item" data-link>
       <div class="favorite-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -238,11 +241,12 @@ function renderFavorites(favorites) {
         </svg>
       </div>
       <div class="favorite-info">
-        <h4>${fav.route_id ? `Ruta ${fav.route_code || ''} ${fav.route_name || ''}`.trim() : `Parada: ${fav.stop_name || ''}`}</h4>
-        <p class="favorite-meta">${fav.route_id ? `${fav.route_origin || ''} → ${fav.route_destination || ''}` : ''}</p>
+        <h4>${fav.route_id ? `Ruta ${r?.code || ''} ${r?.name || ''}`.trim() : `Parada: ${s?.name || ''}`}</h4>
+        <p class="favorite-meta">${fav.route_id && r ? `${r.origin || ''} → ${r.destination || ''}` : ''}</p>
       </div>
     </a>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderRecentRoutes(routes) {

@@ -14,6 +14,8 @@ let currentSession = null;
 let positionBuffer = [];
 let flushInterval = null;
 let isActive = false;
+let unsubscribePosition = null;
+let unsubscribeError = null;
 
 const FLUSH_INTERVAL = 10000;
 const BUFFER_SIZE = 50;
@@ -69,6 +71,11 @@ function onPosition(position) {
   }
 }
 
+function onError(error) {
+  if (!isActive) return;
+  eventBus.emit(TRIP_EVENTS.ERROR, error);
+}
+
 export const tripSessionService = {
   async startSession(routeId, variantId = null, isDirect = false) {
     const supabase = getSupabase();
@@ -97,7 +104,9 @@ export const tripSessionService = {
     isActive = true;
     positionBuffer = [];
 
-    geolocationService.onPosition = onPosition;
+    // Suscribirse a las posiciones GPS del servicio (emite por eventBus).
+    unsubscribePosition = eventBus.on(GEOLOCATION_EVENTS.POSITION, onPosition);
+    unsubscribeError = eventBus.on(GEOLOCATION_EVENTS.ERROR, onError);
     geolocationService.startTracking({ enableHighAccuracy: true, maximumAge: 5000 });
 
     startFlushInterval();
@@ -110,6 +119,8 @@ export const tripSessionService = {
     if (!isActive || !currentSession) return null;
 
     geolocationService.stopTracking();
+    if (unsubscribePosition) { unsubscribePosition(); unsubscribePosition = null; }
+    if (unsubscribeError) { unsubscribeError(); unsubscribeError = null; }
 
     if (positionBuffer.length > 0) {
       await savePositions([...positionBuffer]);
@@ -161,6 +172,10 @@ export const tripSessionService = {
 
   async resumeSession() {
     if (!isActive || !currentSession) return;
+    if (!unsubscribePosition) {
+      unsubscribePosition = eventBus.on(GEOLOCATION_EVENTS.POSITION, onPosition);
+      unsubscribeError = eventBus.on(GEOLOCATION_EVENTS.ERROR, onError);
+    }
     geolocationService.startTracking({ enableHighAccuracy: true, maximumAge: 5000 });
     startFlushInterval();
   },
