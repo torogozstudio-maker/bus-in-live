@@ -29,5 +29,9 @@ export default defineConfig({
       '@utils': '/src/utils',
       '@styles': '/src/styles'
     }
+  },
+  test: {
+    environment: 'node',
+    include: ['tests/**/*.test.js']
   }
 });

@@ -230,6 +230,37 @@
   flex: 1;
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+}
+
+@media (min-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.info-banner {
+  padding: var(--spacing-3);
+  background: var(--background);
+  border-left: 3px solid var(--primary-action);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+}
+
+.info-banner p {
+  margin: 0;
+}
+
 .alert {
   display: flex;
   align-items: flex-start;

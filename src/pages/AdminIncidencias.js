@@ -3,6 +3,7 @@ import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { getCurrentCity } from '../config/city.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let currentFilters = { status: '', routeId: '' };
 
@@ -137,7 +138,7 @@ function attachListeners() {
       const { data: route } = await (await import('../services/routes.js')).routeService.getRouteById(routeId);
       if (route?.route_variants) {
         route.route_variants.filter(v => v.active).forEach(v => {
-          variantSelect.innerHTML += `<option value="${v.id}">${v.name} (${v.direct ? 'Directo' : 'No directo'})</option>`;
+          variantSelect.innerHTML += `<option value="${v.id}">${escapeHtml(v.name)} (${v.direct ? 'Directo' : 'No directo'})</option>`;
         });
       }
     }
@@ -153,7 +154,7 @@ async function loadRoutesForIncidentSelect() {
   const { data: routes } = await (await import('../services/routes.js')).routeService.getRoutes({ city: getCurrentCity(), status: 'normal' });
   const routeSelect = document.getElementById('incident-route');
   routes?.forEach(route => {
-    routeSelect.innerHTML += `<option value="${route.id}">${route.code} - ${route.name}</option>`;
+    routeSelect.innerHTML += `<option value="${route.id}">${escapeHtml(route.code)} - ${escapeHtml(route.name)}</option>`;
   });
 }
 
@@ -272,26 +273,26 @@ function renderAdminIncidentCard(incident) {
       <div class="incident-card-header">
         <div>
           <span class="badge badge-${getTypeBadgeClass(incident.type)}">${getIncidentTypeLabel(incident.type)}</span>
-          <span class="badge badge-${getSeverityBadgeClass(severity)}">${severity}</span>
+          <span class="badge badge-${getSeverityBadgeClass(severity)}">${escapeHtml(severity)}</span>
           <span class="badge badge-${getIncidentStatusBadgeClass(status)}${isExpired ? ' expired' : ''}">${getIncidentStatusLabel(status)}${isExpired ? ' (Expirada)' : ''}</span>
         </div>
         <span class="incident-time">${formatRelativeTime(incident.created_at)}</span>
       </div>
 
       <div class="incident-card-body">
-        <p class="incident-description">${incident.description}</p>
+        <p class="incident-description">${escapeHtml(incident.description)}</p>
 
         <div class="incident-meta">
           ${route ? `
             <div class="meta-item">
               <span class="meta-label">Ruta:</span>
-              <span class="meta-value"><span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span> ${route.name}</span>
+              <span class="meta-value"><span class="route-badge" style="background: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span> ${escapeHtml(route.name)}</span>
             </div>
           ` : ''}
           ${variant ? `
             <div class="meta-item">
               <span class="meta-label">Variante:</span>
-              <span class="meta-value">${variant.name}</span>
+              <span class="meta-value">${escapeHtml(variant.name)}</span>
             </div>
           ` : ''}
           <div class="meta-item">

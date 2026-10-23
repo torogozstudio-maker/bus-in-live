@@ -2,6 +2,7 @@ import { adminService } from '../services/admin.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let currentTab = 'changes';
 let currentFilters = { status: '' };
@@ -150,13 +151,13 @@ function renderRequestCard(req) {
       </div>
 
       <div class="request-card-body">
-        <p class="request-reason"><strong>Motivo:</strong> ${req.reason}</p>
+        <p class="request-reason"><strong>Motivo:</strong> ${escapeHtml(req.reason)}</p>
 
         ${route ? `
           <div class="request-meta">
             <div class="meta-item">
               <span class="meta-label">Ruta:</span>
-              <span class="meta-value"><span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span> ${route.name}</span>
+              <span class="meta-value"><span class="route-badge" style="background: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span> ${escapeHtml(route.name)}</span>
             </div>
           </div>
         ` : ''}
@@ -164,7 +165,7 @@ function renderRequestCard(req) {
         <div class="request-meta">
           <div class="meta-item">
             <span class="meta-label">Solicitado por:</span>
-            <span class="meta-value">${user?.nombre || 'Usuario'} (${user?.email || 'sin email'})</span>
+            <span class="meta-value">${escapeHtml(user?.nombre || 'Usuario')} (${escapeHtml(user?.email || 'sin email')})</span>
           </div>
         </div>
 
@@ -174,18 +175,18 @@ function renderRequestCard(req) {
             <div class="changes-comparison">
               <div class="change-column">
                 <h5>Actual</h5>
-                <pre>${JSON.stringify(req.old_data, null, 2)}</pre>
+                <pre>${escapeHtml(JSON.stringify(req.old_data, null, 2))}</pre>
               </div>
               <div class="change-column">
                 <h5>Propuesto</h5>
-                <pre>${JSON.stringify(req.proposed_data, null, 2)}</pre>
+                <pre>${escapeHtml(JSON.stringify(req.proposed_data, null, 2))}</pre>
               </div>
             </div>
           </details>
         ` : `
           <details class="request-changes">
             <summary>Ver evidencia</summary>
-            <p>${req.evidence || 'Sin evidencia adjunta'}</p>
+            <p>${escapeHtml(req.evidence) || 'Sin evidencia adjunta'}</p>
           </details>
         `}
       </div>

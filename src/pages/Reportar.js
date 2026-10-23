@@ -7,6 +7,7 @@ import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { icon } from '../utils/icons.js';
 import { setFieldError, clearFieldError, clearAllErrors, focusFirstInvalid } from '../utils/formValidation.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let selectedRoute = null;
 let selectedStop = null;
@@ -272,9 +273,9 @@ async function searchRoutesForReport(query) {
 
   routeResults.innerHTML = routes.map(r => `
     <button class="search-result-item" data-route-id="${r.id}">
-      <span class="search-result-code">${r.code}</span>
-      <span class="search-result-name">${r.name}</span>
-      <span class="search-result-meta">${r.origin} → ${r.destination}</span>
+      <span class="search-result-code">${escapeHtml(r.code)}</span>
+      <span class="search-result-name">${escapeHtml(r.name)}</span>
+      <span class="search-result-meta">${escapeHtml(r.origin)} → ${escapeHtml(r.destination)}</span>
     </button>
   `).join('');
 
@@ -295,8 +296,8 @@ function selectRouteForReport(route) {
   clearFieldError('report-route-search');
   document.getElementById('selected-report-route').innerHTML = `
     <div class="selected-route-card">
-      <span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span>
-      <div><strong>${route.name}</strong><span>${route.origin} → ${route.destination}</span></div>
+      <span class="route-badge" style="background: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span>
+      <div><strong>${escapeHtml(route.name)}</strong><span>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</span></div>
       <button class="btn btn-ghost btn-sm" id="change-report-route">Cambiar</button>
     </div>
   `;
@@ -326,7 +327,7 @@ async function searchStopsForReport(query) {
 
   stopResults.innerHTML = stops.map(s => `
     <button class="search-result-item" data-stop-id="${s.id}">
-      <span class="search-result-name">${s.name}</span>
+      <span class="search-result-name">${escapeHtml(s.name)}</span>
       <span class="search-result-meta">${s.latitude?.toFixed(4)}, ${s.longitude?.toFixed(4)}</span>
     </button>
   `).join('');
@@ -348,7 +349,7 @@ function selectStopForReport(stop) {
   clearFieldError('report-route-search');
   document.getElementById('selected-report-stop').innerHTML = `
     <div class="selected-route-card">
-      <span class="route-badge" style="background: var(--info)">${stop.name}</span>
+      <span class="route-badge" style="background: var(--info)">${escapeHtml(stop.name)}</span>
       <button class="btn btn-ghost btn-sm" id="change-report-stop">Cambiar</button>
     </div>
   `;

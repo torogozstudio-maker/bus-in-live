@@ -8,6 +8,7 @@ import { eventBus } from '../utils/eventBus.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { getCurrentCity } from '../config/city.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let map = null;
 let L = null;
@@ -229,9 +230,9 @@ async function handleSearch(query) {
 
   searchResults.innerHTML = routes.map(route => `
     <button class="search-result-item" data-route-id="${route.id}">
-      <span class="search-result-code">${route.code}</span>
-      <span class="search-result-name">${route.name}</span>
-      <span class="search-result-meta">${route.origin} → ${route.destination}</span>
+      <span class="search-result-code">${escapeHtml(route.code)}</span>
+      <span class="search-result-name">${escapeHtml(route.name)}</span>
+      <span class="search-result-meta">${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</span>
     </button>
   `).join('');
 
@@ -275,7 +276,7 @@ async function loadRoutes() {
           lineCap: 'round',
           lineJoin: 'round'
         });
-        polyline.bindPopup(`<strong>Ruta ${route.code}</strong><br>${route.name}<br>${route.origin} → ${route.destination}`);
+        polyline.bindPopup(`<strong>Ruta ${escapeHtml(route.code)}</strong><br>${escapeHtml(route.name)}<br>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}`);
         polyline.on('click', () => selectRoute(route.id));
         polyline.addTo(routesLayer);
       }
@@ -294,7 +295,7 @@ async function loadIncidents() {
       const marker = L.marker([lat, lng], {
         icon: createIncidentIcon(incident.type)
       });
-      marker.bindPopup(`<strong>${getIncidentLabel(incident.type)}</strong><br>${incident.description || 'Sin descripción'}`);
+      marker.bindPopup(`<strong>${escapeHtml(getIncidentLabel(incident.type))}</strong><br>${escapeHtml(incident.description) || 'Sin descripción'}`);
       marker.addTo(incidentsLayer);
     }
   });
@@ -324,7 +325,7 @@ async function selectRoute(routeId) {
           lineCap: 'round',
           lineJoin: 'round'
         });
-        polyline.bindPopup(`<strong>Ruta ${route.code}</strong><br>${route.name}<br>${shape.variant_id ? `Variante: ${route.route_variants?.find(v => v.id === shape.variant_id)?.name || ''}` : 'Ruta principal'}`);
+        polyline.bindPopup(`<strong>Ruta ${escapeHtml(route.code)}</strong><br>${escapeHtml(route.name)}<br>${shape.variant_id ? `Variante: ${escapeHtml(route.route_variants?.find(v => v.id === shape.variant_id)?.name || '')}` : 'Ruta principal'}`);
         polyline.addTo(routesLayer);
       }
     });
@@ -347,7 +348,7 @@ async function selectRoute(routeId) {
         const marker = L.marker([stop.latitude, stop.longitude], {
           icon: createStopIcon(stop.stop_type)
         });
-        marker.bindPopup(`<strong>${stop.name}</strong><br>Secuencia: ${rs.sequence}<br>Dirección: ${rs.direction === 'outbound' ? 'Ida' : 'Vuelta'}`);
+        marker.bindPopup(`<strong>${escapeHtml(stop.name)}</strong><br>Secuencia: ${rs.sequence}<br>Dirección: ${rs.direction === 'outbound' ? 'Ida' : 'Vuelta'}`);
         marker.on('click', () => showStopInfo(stop, route));
         marker.addTo(stopsLayer);
       }
@@ -400,19 +401,19 @@ function showRouteInfoPanel(route) {
   content.innerHTML = `
     <div class="route-info-header">
       <div>
-        <span class="route-badge">${route.code}</span>
-        <h3>${route.name}</h3>
+        <span class="route-badge">${escapeHtml(route.code)}</span>
+        <h3>${escapeHtml(route.name)}</h3>
       </div>
       <span class="badge badge-${getStatusBadgeClass(route.status)}">${statusLabel}</span>
     </div>
-    <p class="route-meta">${route.origin} → ${route.destination}</p>
+    <p class="route-meta">${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</p>
 
     ${variants.length > 0 ? `
       <div class="variants-list">
         <h4>Variantes</h4>
         ${variants.map(v => `
           <button class="variant-btn ${v.id === selectedVariantId ? 'active' : ''}" data-variant-id="${v.id}">
-            <span>${v.name}</span>
+            <span>${escapeHtml(v.name)}</span>
             <span class="badge badge-${v.direct ? 'success' : 'info'}">${v.direct ? 'Directo' : 'No directo'}</span>
           </button>
         `).join('')}
@@ -450,10 +451,10 @@ function showStopInfo(stop, route) {
 
   content.innerHTML = `
     <div class="stop-info-header">
-      <h3>${stop.name}</h3>
+      <h3>${escapeHtml(stop.name)}</h3>
       <span class="badge badge-info">${getStopTypeLabel(stop.stop_type)}</span>
     </div>
-    <p class="stop-meta">Ruta ${route.code}: ${route.name}</p>
+    <p class="stop-meta">Ruta ${escapeHtml(route.code)}: ${escapeHtml(route.name)}</p>
     <div class="stop-actions">
       <a href="/paradas/${stop.id}" class="btn btn-primary btn-sm" data-link>Ver detalle</a>
       <button class="btn btn-secondary btn-sm" id="favorite-stop-btn">${icon('star', 16)} Favorito</button>

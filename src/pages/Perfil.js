@@ -1,5 +1,6 @@
 import { authService } from '../services/auth.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml, escapeAttr } from '../utils/sanitize.js';
 
 export async function renderPage(container) {
   const user = authService.getUser();
@@ -21,10 +22,10 @@ export async function renderPage(container) {
 
       <div class="card" style="margin-bottom: var(--spacing-6);">
         <div class="card-body" style="display: flex; align-items: center; gap: var(--spacing-5);">
-          <div class="avatar" style="width: 64px; height: 64px; font-size: 1.5rem; background-color: var(--primary-action); flex-shrink: 0;" aria-hidden="true">${initial}</div>
+          <div class="avatar" style="width: 64px; height: 64px; font-size: 1.5rem; background-color: var(--primary-action); flex-shrink: 0;" aria-hidden="true">${escapeHtml(initial)}</div>
           <div style="min-width: 0;">
-            <div style="font-size: var(--text-lg); font-weight: 600;">${user.name || 'Usuario'}</div>
-            <div style="color: var(--text-secondary); word-break: break-all;">${user.email}</div>
+            <div style="font-size: var(--text-lg); font-weight: 600;">${escapeHtml(user.name || 'Usuario')}</div>
+            <div style="color: var(--text-secondary); word-break: break-all;">${escapeHtml(user.email)}</div>
             <div style="margin-top: var(--spacing-2);">
               <span class="badge ${user.role === 'admin' ? 'badge-error' : 'badge-info'}">${user.role === 'admin' ? 'Administrador' : 'Usuario'}</span>
             </div>
@@ -40,7 +41,7 @@ export async function renderPage(container) {
           <dl style="display: grid; gap: var(--spacing-4);">
             <div style="display: flex; justify-content: space-between; gap: var(--spacing-4);">
               <dt style="color: var(--text-secondary);">Correo electrónico</dt>
-              <dd style="text-align: right; word-break: break-all;">${user.email}</dd>
+              <dd style="text-align: right; word-break: break-all;">${escapeHtml(user.email)}</dd>
             </div>
             <div style="display: flex; justify-content: space-between; gap: var(--spacing-4);">
               <dt style="color: var(--text-secondary);">Fecha de registro</dt>
@@ -62,7 +63,7 @@ export async function renderPage(container) {
           <form id="profile-form" novalidate>
             <div class="form-group">
               <label for="profile-name" class="form-label">Nombre</label>
-              <input type="text" id="profile-name" name="name" class="form-input" value="${user.name || ''}" autocomplete="name" placeholder="Tu nombre">
+              <input type="text" id="profile-name" name="name" class="form-input" value="${escapeAttr(user.name || '')}" autocomplete="name" placeholder="Tu nombre">
             </div>
             <button type="submit" class="btn btn-primary" id="save-profile-btn">Guardar cambios</button>
           </form>

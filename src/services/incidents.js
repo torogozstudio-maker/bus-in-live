@@ -14,6 +14,12 @@ const INCIDENT_TYPES = [
 const INCIDENT_SEVERITIES = ['low', 'medium', 'high', 'critical'];
 const INCIDENT_STATUSES = ['active', 'resolved', 'expired'];
 
+// Whitelist de columnas escribibles por el cliente (evita mass-assignment).
+const CREATABLE_INCIDENT_FIELDS = [
+  'route_id', 'variant_id', 'type', 'severity', 'location',
+  'description', 'starts_at', 'expires_at'
+];
+
 export const incidentService = {
   async createIncident(incidentData) {
     const supabase = getSupabase();
@@ -29,10 +35,23 @@ export const incidentService = {
       return { data: null, error: 'Severidad inválida' };
     }
 
+    if (incidentData.description !== undefined && incidentData.description !== null) {
+      const desc = String(incidentData.description);
+      if (desc.trim().length === 0 || desc.length > 2000) {
+        return { data: null, error: 'Descripción inválida (máx. 2000 caracteres)' };
+      }
+    }
+
+    const safeRow = {};
+    for (const field of CREATABLE_INCIDENT_FIELDS) {
+      if (incidentData[field] !== undefined) safeRow[field] = incidentData[field];
+    }
+    if (safeRow.description) safeRow.description = String(safeRow.description).trim();
+
     const { data, error } = await supabase
       .from('incidents')
       .insert({
-        ...incidentData,
+        ...safeRow,
         created_by: user.id,
         status: 'active'
       })

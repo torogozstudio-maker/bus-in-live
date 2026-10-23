@@ -2,6 +2,7 @@ import { adminService } from '../services/admin.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml, escapeAttr, safeUrl } from '../utils/sanitize.js';
 
 let currentFilters = { status: '', routeId: '' };
 let searchDebounce = null;
@@ -117,28 +118,34 @@ function renderAdminReportCard(report) {
       </div>
 
       <div class="report-card-body">
-        <p class="report-description">${report.description}</p>
+        <p class="report-description">${escapeHtml(report.description)}</p>
 
         <div class="report-meta">
           ${route ? `
             <div class="meta-item">
               <span class="meta-label">Ruta:</span>
-              <span class="meta-value"><span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span> ${route.name}</span>
+              <span class="meta-value"><span class="route-badge" style="background: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span> ${escapeHtml(route.name)}</span>
             </div>
           ` : ''}
           <div class="meta-item">
             <span class="meta-label">Reportado por:</span>
-            <span class="meta-value">${user?.nombre || 'Usuario'} (${user?.email || 'sin email'})</span>
+            <span class="meta-value">${escapeHtml(user?.nombre || 'Usuario')} (${escapeHtml(user?.email || 'sin email')})</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Ubicación:</span>
-            <span class="meta-value">${report.location?.coordinates ? `${report.location.coordinates[1].toFixed(6)}, ${report.location.coordinates[0].toFixed(6)}` : 'No especificada'}</span>
+            <span class="meta-value">${report.location?.coordinates ? `${Number(report.location.coordinates[1]).toFixed(6)}, ${Number(report.location.coordinates[0]).toFixed(6)}` : 'No especificada'}</span>
           </div>
+          ${report.review_reason ? `
+            <div class="meta-item">
+              <span class="meta-label">Motivo de moderación:</span>
+              <span class="meta-value">${escapeHtml(report.review_reason)}</span>
+            </div>
+          ` : ''}
         </div>
 
         ${report.evidence ? `
           <div class="report-evidence">
-            <a href="${report.evidence}" target="_blank" class="btn btn-ghost btn-sm">Ver evidencia</a>
+            <a href="${escapeAttr(safeUrl(report.evidence))}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">Ver evidencia</a>
           </div>
         ` : ''}
       </div>
@@ -181,8 +188,9 @@ function attachReportListeners(reports) {
     btn.addEventListener('click', async () => {
       const reportId = btn.dataset.reportId;
       const reason = prompt('Motivo del rechazo (opcional):');
+      if (reason === null) return;
       const user = authService.getUser();
-      const { error } = await adminService.moderateReport(reportId, 'rejected', user.id);
+      const { error } = await adminService.moderateReport(reportId, 'rejected', user.id, reason || null);
       if (error) toastService.error('Error al rechazar');
       else { toastService.success('Reporte rechazado'); loadAdminReports(); }
     });

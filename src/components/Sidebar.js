@@ -1,5 +1,6 @@
 import { authService } from '../services/auth.js';
 import { stripBase } from '../utils/router.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 const mainNavItems = [
   { href: '/', label: 'Inicio', icon: 'home' },
@@ -93,10 +94,10 @@ export function renderSidebar() {
       <div class="sidebar-footer">
         ${isAuth ? `
           <div class="sidebar-user">
-            <div class="avatar" style="background-color: var(--primary-action);">${user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</div>
+            <div class="avatar" style="background-color: var(--primary-action);">${escapeHtml(user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U')}</div>
             <div class="sidebar-user-info">
-              <div class="sidebar-user-name">${user?.name || 'Usuario'}</div>
-              <div class="sidebar-user-email">${user?.email}</div>
+              <div class="sidebar-user-name">${escapeHtml(user?.name || 'Usuario')}</div>
+              <div class="sidebar-user-email">${escapeHtml(user?.email)}</div>
               ${user?.role === 'admin' ? '<span class="badge badge-primary" style="font-size: 10px;">Administrador</span>' : ''}
             </div>
           </div>

@@ -11,6 +11,7 @@ import { themeService } from './services/theme.js';
 import { routeService } from './services/routes.js';
 import { stopService } from './services/stops.js';
 import { getCurrentCity } from './config/city.js';
+import { escapeHtml } from './utils/sanitize.js';
 
 let appContainer = null;
 let isMobile = false;
@@ -264,7 +265,7 @@ async function handleHeaderSearch(query, resultsEl) {
       resultsEl.innerHTML = items.map(item => `
         <a href="${item.href}" data-link class="search-result-item" style="display:flex;gap:8px;align-items:center;padding:8px 12px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border);">
           <span class="badge" style="font-size:10px;">${item.type}</span>
-          <span>${item.label}</span>
+          <span>${escapeHtml(item.label)}</span>
         </a>
       `).join('');
     }
@@ -384,10 +385,10 @@ export function createApp() {
   // IMPORTANTE: /rutas/crear y /rutas/:id/editar deben ir ANTES de /rutas/:id
   // para que el router no las interprete como un id.
   router.add('/rutas/crear', async (route) => {
-    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Crear ruta', text: 'Esta función estará disponible próximamente para colaboradores verificados.' } });
+    await render(() => import('./pages/CrearRuta.js'), route);
   });
   router.add('/rutas/:id/editar', async (route) => {
-    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Editar ruta', text: 'Esta función estará disponible próximamente para administradores.' } });
+    await render(() => import('./pages/EditarRuta.js'), route);
   });
   router.add('/rutas/:id', async (route) => {
     await render(() => import('./pages/RutaDetalle.js'), route);
@@ -423,7 +424,7 @@ export function createApp() {
     await render(() => import('./pages/Privacidad.js'), route);
   });
   router.add('/notificaciones', async (route) => {
-    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Notificaciones', text: 'Las notificaciones estarán disponibles en una próxima actualización.' } });
+    await render(() => import('./pages/Notificaciones.js'), route);
   });
   // Páginas informativas enlazadas desde Home y Register
   router.add('/terminos', async (route) => {

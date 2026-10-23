@@ -24,6 +24,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: node scripts/check-css.mjs
+      - run: npm test
       - run: npm run build
         env:
           # .env no se sube a GitHub (y no debe), así que el build necesita estos valores aquí.

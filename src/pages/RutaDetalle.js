@@ -10,6 +10,7 @@ import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let currentRoute = null;
 let currentVariantId = null;
@@ -84,9 +85,9 @@ function renderRouteDetail(route, stops, incidents, frequency, isFavorite) {
       <div class="container">
         <div class="detail-header-content">
           <div>
-            <span class="route-badge-large" style="background-color: ${getRouteColor(route.code)}">${route.code}</span>
-            <h1>${route.name}</h1>
-            <p class="detail-meta">${route.origin} → ${route.destination}</p>
+            <span class="route-badge-large" style="background-color: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span>
+            <h1>${escapeHtml(route.name)}</h1>
+            <p class="detail-meta">${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</p>
           </div>
           <div class="detail-header-actions">
             <span class="badge badge-${getStatusBadgeClass(status)} badge-lg">${statusLabel}</span>
@@ -108,7 +109,7 @@ function renderRouteDetail(route, stops, incidents, frequency, isFavorite) {
             <div class="variant-tabs">
               ${variants.map(v => `
                 <button class="tab ${v.id === currentVariantId ? 'tab-active' : ''}" data-variant-id="${v.id}" data-direct="${v.direct}">
-                  ${v.name} <span class="badge badge-${v.direct ? 'success' : 'info'} badge-xs">${v.direct ? 'Directo' : 'No directo'}</span>
+                  ${escapeHtml(v.name)} <span class="badge badge-${v.direct ? 'success' : 'info'} badge-xs">${v.direct ? 'Directo' : 'No directo'}</span>
                 </button>
               `).join('')}
             </div>
@@ -240,7 +241,7 @@ function renderStopItem(stop, direction) {
       <span class="stop-sequence">${stop.sequence}</span>
       <div class="stop-info">
         <div class="stop-name-row">
-          <span class="stop-name">${stop.name}</span>
+          <span class="stop-name">${escapeHtml(stop.name)}</span>
           ${stopTypeIcon}
         </div>
         <span class="stop-coords">${stop.latitude?.toFixed(6)}, ${stop.longitude?.toFixed(6)}</span>
@@ -293,8 +294,8 @@ function renderIncidentItem(incident) {
       </div>
       <div class="incident-info">
         <h4>${getIncidentLabel(incident.type)}</h4>
-        <p>${incident.description || 'Sin descripción'}</p>
-        <span class="badge badge-${severityColors[incident.severity] || 'info'} badge-xs">${incident.severity}</span>
+        <p>${escapeHtml(incident.description) || 'Sin descripción'}</p>
+        <span class="badge badge-${severityColors[incident.severity] || 'info'} badge-xs">${escapeHtml(incident.severity)}</span>
       </div>
     </div>
   `;
@@ -436,7 +437,7 @@ async function initRouteMap(routeId) {
         fillColor: '#2563EB',
         fillOpacity: 1,
         weight: 2
-      }).bindPopup(`<strong>${rs.stops.name}</strong><br>Secuencia: ${rs.sequence}`).addTo(map);
+      }).bindPopup(`<strong>${escapeHtml(rs.stops.name)}</strong><br>Secuencia: ${rs.sequence}`).addTo(map);
     }
   });
 }

@@ -1,6 +1,7 @@
 import { stopService } from '../services/stops.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -102,13 +103,13 @@ function renderStopCard(stop) {
   return `
     <article class="stop-card" data-stop-id="${stop.id}">
       <div class="stop-card-header">
-        <h3>${stop.name}</h3>
+        <h3>${escapeHtml(stop.name)}</h3>
         <span class="badge badge-${getStopBadgeClass(stop.stop_type)}">${getStopTypeLabel(stop.stop_type)}</span>
       </div>
       <p class="stop-coords">${stop.latitude?.toFixed(6)}, ${stop.longitude?.toFixed(6)}</p>
       ${routeCodes.length > 0 ? `
         <div class="stop-routes">
-          ${routeCodes.map(code => `<span class="route-badge-small" style="background: ${getRouteColor(code)}">${code}</span>`).join('')}
+          ${routeCodes.map(code => `<span class="route-badge-small" style="background: ${getRouteColor(code)}">${escapeHtml(code)}</span>`).join('')}
           ${routes.length > 3 ? `<span class="route-badge-small badge-muted">+${routes.length - 3} más</span>` : ''}
         </div>
       ` : '<p class="stop-no-routes">Sin rutas asignadas</p>'}

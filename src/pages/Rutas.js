@@ -3,6 +3,7 @@ import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { getCurrentCity } from '../config/city.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -153,11 +154,11 @@ function renderRouteCard(route) {
   return `
     <article class="route-card" data-route-id="${route.id}">
       <div class="route-card-header">
-        <span class="route-badge" style="background-color: ${getRouteColor(route.code)}">${route.code}</span>
+        <span class="route-badge" style="background-color: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span>
         <span class="badge badge-${getStatusBadgeClass(status)}">${statusLabel}</span>
       </div>
-      <h3 class="route-name">${route.name}</h3>
-      <p class="route-path">${route.origin} → ${route.destination}</p>
+      <h3 class="route-name">${escapeHtml(route.name)}</h3>
+      <p class="route-path">${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</p>
       <div class="route-meta">
         <span class="route-type badge badge-${route.type === 'especial' ? 'warning' : 'info'}">${route.type === 'especial' ? 'Especial' : 'Regular'}</span>
         ${hasDirect ? '<span class="chip chip-primary">Tiene variante directa</span>' : ''}

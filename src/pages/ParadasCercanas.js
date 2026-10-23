@@ -3,11 +3,11 @@ import { geolocationService, GEOLOCATION_EVENTS } from '../services/geolocation.
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let userLocation = null;
 let nearbyStops = [];
 let radius = 500;
-let watchId = null;
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -235,7 +235,6 @@ async function searchNearbyStops() {
 
 function renderNearbyStop(stop) {
   const distance = stop.distance || 0;
-  const routeCount = stop.route_stops?.length || 0;
   const routes = stop.route_stops?.map(rs => rs.routes).filter(Boolean) || [];
   const routeCodes = [...new Set(routes.map(r => r.code))].slice(0, 3);
 
@@ -243,13 +242,13 @@ function renderNearbyStop(stop) {
     <article class="nearby-stop-item card" data-stop-id="${stop.id}">
       <div class="stop-distance-badge">${formatDistance(distance)}</div>
       <div class="stop-main-info">
-        <h3>${stop.name}</h3>
+        <h3>${escapeHtml(stop.name)}</h3>
         <span class="badge badge-${getStopBadgeClass(stop.stop_type)}">${getStopTypeLabel(stop.stop_type)}</span>
       </div>
       <p class="stop-coords">${stop.latitude?.toFixed(6)}, ${stop.longitude?.toFixed(6)}</p>
       ${routeCodes.length > 0 ? `
         <div class="stop-routes">
-          ${routeCodes.map(code => `<span class="route-badge-small" style="background: ${getRouteColor(code)}">${code}</span>`).join('')}
+          ${routeCodes.map(code => `<span class="route-badge-small" style="background: ${getRouteColor(code)}">${escapeHtml(code)}</span>`).join('')}
           ${routes.length > 3 ? `<span class="route-badge-small badge-muted">+${routes.length - 3} más</span>` : ''}
         </div>
       ` : ''}

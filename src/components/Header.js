@@ -1,5 +1,6 @@
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 export function renderHeader(isMobile) {
   const user = authService.getUser();
@@ -59,13 +60,13 @@ export function renderHeader(isMobile) {
           </div>
           <div class="user-menu" style="position: relative; margin-left: 12px;">
             <button id="user-menu-btn" class="btn btn-ghost user-menu-btn" aria-label="Menú de usuario" aria-expanded="false" aria-haspopup="true">
-              <div class="avatar avatar-sm" style="background-color: var(--primary-action);">${user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</div>
+              <div class="avatar avatar-sm" style="background-color: var(--primary-action);">${escapeHtml(user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U')}</div>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
             <div id="user-dropdown" class="dropdown-menu" role="menu" style="min-width: 220px;">
               <div class="dropdown-header" style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
-                <div style="font-weight: 600; font-size: var(--text-sm);">${user?.name || 'Usuario'}</div>
-                <div style="font-size: var(--text-xs); color: var(--muted);">${user?.email}</div>
+                <div style="font-weight: 600; font-size: var(--text-sm);">${escapeHtml(user?.name || 'Usuario')}</div>
+                <div style="font-size: var(--text-xs); color: var(--muted);">${escapeHtml(user?.email)}</div>
                 ${user?.role === 'admin' ? '<span class="badge badge-primary" style="margin-top: 4px; font-size: 10px;">Administrador</span>' : ''}
               </div>
               <a href="/favoritos" class="dropdown-item" role="menuitem" data-nav-link>

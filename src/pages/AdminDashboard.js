@@ -2,6 +2,15 @@ import { adminService } from '../services/admin.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml } from '../utils/sanitize.js';
+
+const REPORT_STATUS_META = {
+  pending: { label: 'Pendiente', badge: 'badge-warning' },
+  confirmed: { label: 'Confirmado', badge: 'badge-success' },
+  rejected: { label: 'Rechazado', badge: 'badge-error' },
+  expired: { label: 'Expirado', badge: 'badge-muted' },
+  resolved: { label: 'Resuelto', badge: 'badge-info' }
+};
 
 export async function renderPage(container) {
   if (!authService.isAdmin()) {
@@ -127,10 +136,73 @@ export async function renderPage(container) {
           </a>
         </div>
       </div>
+
+      <div class="admin-section" id="analytics-section">
+        <div class="section-header">
+          <h2>Panel de actividad</h2>
+        </div>
+        <div class="admin-stats-grid" id="analytics-stats">
+          <div class="card stat-card loading">
+            <div class="stat-info">
+              <div class="stat-value">--</div>
+              <div class="stat-label">Usuarios totales</div>
+            </div>
+          </div>
+          <div class="card stat-card loading">
+            <div class="stat-info">
+              <div class="stat-value">--</div>
+              <div class="stat-label">Rutas activas</div>
+            </div>
+          </div>
+          <div class="card stat-card loading">
+            <div class="stat-info">
+              <div class="stat-value">--</div>
+              <div class="stat-label">Reportes (30d)</div>
+            </div>
+          </div>
+          <div class="card stat-card loading">
+            <div class="stat-info">
+              <div class="stat-value">--</div>
+              <div class="stat-label">Incidencias activas</div>
+            </div>
+          </div>
+          <div class="card stat-card loading">
+            <div class="stat-info">
+              <div class="stat-value">--</div>
+              <div class="stat-label">Usuarios activos (30d)</div>
+            </div>
+          </div>
+          <div class="card stat-card loading">
+            <div class="stat-info">
+              <div class="stat-value">--</div>
+              <div class="stat-label">Cobertura de rutas (7 días)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="reports-by-state-card" style="margin-top: var(--spacing-4);">
+          <div class="card-header">
+            <h3>Reportes por estado</h3>
+          </div>
+          <div id="reports-by-state-content">
+            <p class="empty-state-text">Cargando...</p>
+          </div>
+        </div>
+
+        <div class="card" id="top-routes-card" style="margin-top: var(--spacing-4);">
+          <div class="card-header">
+            <h3>Top rutas reportadas</h3>
+          </div>
+          <div id="top-routes-content">
+            <p class="empty-state-text">Cargando...</p>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
   loadDashboardStats();
+  loadAnalytics();
 }
 
 async function loadDashboardStats() {
@@ -155,4 +227,76 @@ async function loadDashboardStats() {
     card.classList.remove('loading');
     card.querySelector('.stat-value').textContent = values[i] || 0;
   });
+}
+
+async function loadAnalytics() {
+  const analytics = await adminService.getAnalytics(30);
+  const days = analytics.rangeDays;
+
+  const statsGrid = document.getElementById('analytics-stats');
+  if (statsGrid) {
+    const coverage = analytics.coverage;
+    const coverageLabel = coverage && coverage.totalRoutes > 0
+      ? `Cobertura: ${coverage.routesWithObservations}/${coverage.totalRoutes} rutas con datos (7 días)`
+      : 'Cobertura de rutas (7 días)';
+    const coverageValue = coverage && coverage.percent !== null ? `${coverage.percent}%` : null;
+
+    const cards = [
+      { label: 'Usuarios totales', value: analytics.totals?.users ?? null },
+      { label: 'Rutas activas (no eliminadas)', value: analytics.totals?.routes ?? null },
+      { label: `Reportes últimos ${days} días`, value: analytics.activity?.reportsInRange ?? null },
+      { label: 'Incidencias activas', value: analytics.totals?.incidents ?? null },
+      { label: `Usuarios activos últimos ${days} días`, value: analytics.activity?.activeUsers ?? null },
+      { label: coverageLabel, value: coverageValue }
+    ];
+
+    statsGrid.innerHTML = cards.map((card) => `
+      <div class="card stat-card">
+        <div class="stat-info">
+          <div class="stat-value">${card.value === null ? 'Sin datos aún' : card.value}</div>
+          <div class="stat-label">${escapeHtml(card.label)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const byStateContent = document.getElementById('reports-by-state-content');
+  if (byStateContent) {
+    const byState = analytics.reportsByState;
+    if (!byState) {
+      byStateContent.innerHTML = '<p class="empty-state-text">Sin datos aún</p>';
+    } else {
+      byStateContent.innerHTML = `
+        <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-2); padding-top: var(--spacing-3);">
+          ${Object.entries(REPORT_STATUS_META).map(([status, meta]) => {
+            const count = byState[status];
+            return `<span class="badge ${meta.badge}">${escapeHtml(meta.label)}: ${count === null || count === undefined ? 'n/d' : count}</span>`;
+          }).join('')}
+        </div>
+      `;
+    }
+  }
+
+  const topRoutesContent = document.getElementById('top-routes-content');
+  if (topRoutesContent) {
+    const topRoutes = analytics.topRoutes;
+    if (!topRoutes || topRoutes.length === 0) {
+      topRoutesContent.innerHTML = '<p class="empty-state-text">Sin datos aún</p>';
+    } else {
+      topRoutesContent.innerHTML = `
+        <ul style="list-style: none; padding: 0; margin: 0; padding-top: var(--spacing-2);">
+          ${topRoutes.map((route, index) => `
+            <li class="detail-row">
+              <span style="display: flex; align-items: center; gap: var(--spacing-2); min-width: 0;">
+                <span class="badge badge-muted">${index + 1}</span>
+                ${route.code ? `<span class="badge badge-primary">${escapeHtml(route.code)}</span>` : ''}
+                <span>${escapeHtml(route.name || 'Ruta sin nombre')}</span>
+              </span>
+              <span class="badge badge-info">${route.count} reporte${route.count === 1 ? '' : 's'}</span>
+            </li>
+          `).join('')}
+        </ul>
+      `;
+    }
+  }
 }

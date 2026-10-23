@@ -7,6 +7,7 @@ import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
 import { getCurrentCity } from '../config/city.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 let selectedRoute = null;
 let selectedVariant = null;
@@ -309,9 +310,9 @@ async function searchRoutesForTrip(query) {
 
   routeResults.innerHTML = routes.map(r => `
     <button class="search-result-item" data-route-id="${r.id}">
-      <span class="search-result-code">${r.code}</span>
-      <span class="search-result-name">${r.name}</span>
-      <span class="search-result-meta">${r.origin} → ${r.destination}</span>
+      <span class="search-result-code">${escapeHtml(r.code)}</span>
+      <span class="search-result-name">${escapeHtml(r.name)}</span>
+      <span class="search-result-meta">${escapeHtml(r.origin)} → ${escapeHtml(r.destination)}</span>
     </button>
   `).join('');
 
@@ -334,10 +335,10 @@ function selectRouteForTrip(route) {
 
   document.getElementById('selected-route-display').innerHTML = `
     <div class="selected-route-card">
-      <span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span>
+      <span class="route-badge" style="background: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span>
       <div>
-        <strong>${route.name}</strong>
-        <span>${route.origin} → ${route.destination}</span>
+        <strong>${escapeHtml(route.name)}</strong>
+        <span>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</span>
       </div>
       <button class="btn btn-ghost btn-sm" id="change-route-btn">Cambiar</button>
     </div>
@@ -366,7 +367,7 @@ async function loadVariantsForTrip(routeId) {
       <label class="variant-option">
         <input type="radio" name="trip-variant" value="${v.id}" ${!selectedVariant ? 'checked' : ''}>
         <div class="variant-option-content">
-          <strong>${v.name}</strong>
+          <strong>${escapeHtml(v.name)}</strong>
           <span class="badge badge-${v.direct ? 'success' : 'info'}">${v.direct ? 'Directo' : 'No directo'}</span>
         </div>
       </label>

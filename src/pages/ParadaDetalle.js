@@ -7,6 +7,7 @@ import { geolocationService } from '../services/geolocation.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 export async function renderPage(container, route) {
   const stopId = route.params.id;
@@ -61,7 +62,7 @@ function renderStopDetail(stop, routes, distance, isFavorite) {
       <div class="container">
         <div class="detail-header-content">
           <div>
-            <h1>${stop.name}</h1>
+            <h1>${escapeHtml(stop.name)}</h1>
             <p class="detail-meta">
               <span class="badge badge-${getStopBadgeClass(stop.stop_type)}">${getStopTypeLabel(stop.stop_type)}</span>
               ${distance ? `<span class="distance-badge">A ${formatDistance(distance)}</span>` : ''}
@@ -98,7 +99,7 @@ function renderStopDetail(stop, routes, distance, isFavorite) {
           ${stop.description ? `
             <div class="card" style="margin-top: 16px;">
               <div class="card-header"><h3>Descripción</h3></div>
-              <div class="card-body"><p>${stop.description}</p></div>
+              <div class="card-body"><p>${escapeHtml(stop.description)}</p></div>
             </div>
           ` : ''}
         </section>
@@ -134,10 +135,10 @@ function renderRoutesList(routes) {
 
   return routes.map(r => `
     <a href="/rutas/${r.id}" class="route-list-item" data-link>
-      <span class="route-badge" style="background: ${getRouteColor(r.code)}">${r.code}</span>
+      <span class="route-badge" style="background: ${getRouteColor(r.code)}">${escapeHtml(r.code)}</span>
       <div class="route-info">
-        <h4>${r.name}</h4>
-        <p>${r.origin} → ${r.destination}</p>
+        <h4>${escapeHtml(r.name)}</h4>
+        <p>${escapeHtml(r.origin)} → ${escapeHtml(r.destination)}</p>
       </div>
       <span class="badge badge-${r.type === 'especial' ? 'warning' : 'info'}">${r.type === 'especial' ? 'Especial' : 'Regular'}</span>
     </a>

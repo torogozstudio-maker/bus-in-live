@@ -1,5 +1,6 @@
 import { favoriteService } from '../services/favorites.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml, escapeAttr } from '../utils/sanitize.js';
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -62,13 +63,13 @@ async function loadFavorites() {
           <div class="card favorite-item" data-fav-id="${f.id}" data-route-id="${f.route_id || ''}" data-stop-id="${f.stop_id || ''}">
             <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-3); flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: var(--spacing-3); min-width: 0; flex: 1;">
-                <span class="route-badge" style="background: var(--primary-action); color: #fff;">${f.routes.code || '—'}</span>
+                <span class="route-badge" style="background: var(--primary-action); color: #fff;">${escapeHtml(f.routes.code || '—')}</span>
                 <div style="min-width: 0;">
-                  <a href="/rutas/${f.routes.id}" data-link style="font-weight: 600; display: block;">${f.routes.name || 'Ruta sin nombre'}</a>
-                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">${f.routes.origin || ''} → ${f.routes.destination || ''}</span>
+                  <a href="/rutas/${f.routes.id}" data-link style="font-weight: 600; display: block;">${escapeHtml(f.routes.name || 'Ruta sin nombre')}</a>
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">${escapeHtml(f.routes.origin || '')} → ${escapeHtml(f.routes.destination || '')}</span>
                 </div>
               </div>
-              <button class="btn btn-ghost btn-sm remove-favorite-btn" data-route-id="${f.route_id || ''}" data-stop-id="${f.stop_id || ''}" aria-label="Quitar ${f.routes.name || 'ruta'} de favoritos">Quitar</button>
+              <button class="btn btn-ghost btn-sm remove-favorite-btn" data-route-id="${f.route_id || ''}" data-stop-id="${f.stop_id || ''}" aria-label="Quitar ${escapeAttr(f.routes.name || 'ruta')} de favoritos">Quitar</button>
             </div>
           </div>
         `).join('')}
@@ -84,11 +85,11 @@ async function loadFavorites() {
               <div style="display: flex; align-items: center; gap: var(--spacing-3); min-width: 0; flex: 1;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; color: var(--link);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                 <div style="min-width: 0;">
-                  <a href="/paradas/${f.stops.id}" data-link style="font-weight: 600; display: block;">${f.stops.name || 'Parada sin nombre'}</a>
-                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">${f.stops.stop_type || 'Parada'}</span>
+                  <a href="/paradas/${f.stops.id}" data-link style="font-weight: 600; display: block;">${escapeHtml(f.stops.name || 'Parada sin nombre')}</a>
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">${escapeHtml(f.stops.stop_type || 'Parada')}</span>
                 </div>
               </div>
-              <button class="btn btn-ghost btn-sm remove-favorite-btn" data-route-id="${f.route_id || ''}" data-stop-id="${f.stop_id || ''}" aria-label="Quitar ${f.stops.name || 'parada'} de favoritos">Quitar</button>
+              <button class="btn btn-ghost btn-sm remove-favorite-btn" data-route-id="${f.route_id || ''}" data-stop-id="${f.stop_id || ''}" aria-label="Quitar ${escapeAttr(f.stops.name || 'parada')} de favoritos">Quitar</button>
             </div>
           </div>
         `).join('')}

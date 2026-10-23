@@ -1,6 +1,17 @@
 import { getSupabase } from './supabase.js';
 import { authService } from './auth.js';
 
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 export const REPORT_TYPES = [
   'accident',
   'traffic',
@@ -17,6 +28,11 @@ export const REPORT_TYPES = [
 
 export const REPORT_STATUSES = ['pending', 'confirmed', 'rejected', 'expired', 'resolved'];
 
+// Columnas que un cliente puede escribir en reports (el resto lo calcula el servidor o RLS).
+const CREATABLE_REPORT_FIELDS = [
+  'route_id', 'stop_id', 'type', 'location', 'description', 'evidence'
+];
+
 export const reportService = {
   async createReport(reportData) {
     const supabase = getSupabase();
@@ -28,10 +44,21 @@ export const reportService = {
       return { data: null, error: 'Tipo de reporte inválido' };
     }
 
+    if (!reportData.description || String(reportData.description).trim().length < 10) {
+      return { data: null, error: 'La descripción debe tener al menos 10 caracteres' };
+    }
+
+    // Whitelist de columnas: evita mass-assignment (reviewed_by, created_at, status, etc.)
+    const safeRow = {};
+    for (const field of CREATABLE_REPORT_FIELDS) {
+      if (reportData[field] !== undefined) safeRow[field] = reportData[field];
+    }
+
     const { data, error } = await supabase
       .from('reports')
       .insert({
-        ...reportData,
+        ...safeRow,
+        description: String(reportData.description).trim().slice(0, 2000),
         user_id: user.id,
         status: 'pending'
       })
@@ -147,14 +174,27 @@ export const reportService = {
 
     const { data, error } = await supabase
       .from('reports')
-      .select('id, description, created_at')
+      .select('id, description, created_at, location')
       .eq('route_id', routeId)
       .eq('type', type)
       .gte('created_at', since)
       .in('status', ['pending', 'confirmed'])
-      .limit(1);
+      .limit(20);
 
-    return { data: data?.[0] || null, error };
+    if (error) return { data: null, error };
+    const candidates = data || [];
+
+    // Con ubicación: además de ruta+tipo, exigir cercanía geográfica (~200 m).
+    if (location?.coordinates) {
+      const [lon, lat] = location.coordinates;
+      const near = candidates.find(r => {
+        if (!r.location?.coordinates) return true;
+        return haversineMeters(lat, lon, r.location.coordinates[1], r.location.coordinates[0]) <= 200;
+      });
+      return { data: near || null, error: null };
+    }
+
+    return { data: candidates[0] || null, error: null };
   },
 
   REPORT_TYPES,

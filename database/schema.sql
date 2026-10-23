@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS reports (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected', 'expired', 'resolved')),
   reviewed_by UUID REFERENCES profiles(id),
   reviewed_at TIMESTAMPTZ,
+  review_reason TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -223,6 +224,19 @@ CREATE TABLE IF NOT EXISTS user_consents (
   gps_schedule JSONB, -- {"monday": "08:00-10:00", ...}
   data_retention_preference TEXT DEFAULT 'delete' CHECK (data_retention_preference IN ('delete', 'anonymize', 'keep')),
   updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Suscripciones Web Push (VAPID): endpoint + claves de cifrado del navegador.
+-- El envío real de push lo hace un backend/servidor con la clave privada VAPID;
+-- esta tabla solo guarda a quién se le puede enviar.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, endpoint)
 );
 
 -- ===================== PARTE 2: FUNCIONES, TRIGGERS, SEGURIDAD E ÍNDICES =====================
@@ -390,6 +404,7 @@ ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE search_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_consents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Se borran TODAS las políticas del esquema public y se recrean abajo, para que no queden
 -- versiones viejas (p. ej. las que causaban recursión). Si agregaste políticas propias
@@ -535,6 +550,16 @@ CREATE POLICY "notification_preferences_own" ON notification_preferences FOR ALL
 CREATE POLICY "user_consents_own" ON user_consents FOR ALL
   USING (user_id = (SELECT auth.uid())) WITH CHECK (user_id = (SELECT auth.uid()));
 
+-- Suscripciones push: cada usuario solo ve/crea/borra las suyas; admin gestiona todas.
+CREATE POLICY "push_subscriptions_select_own" ON push_subscriptions FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+CREATE POLICY "push_subscriptions_insert_own" ON push_subscriptions FOR INSERT
+  WITH CHECK (user_id = (SELECT auth.uid()));
+CREATE POLICY "push_subscriptions_delete_own" ON push_subscriptions FOR DELETE
+  USING (user_id = (SELECT auth.uid()));
+CREATE POLICY "push_subscriptions_admin_all" ON push_subscriptions FOR ALL
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
+
 -- ---------- Índices ----------
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
 CREATE INDEX IF NOT EXISTS idx_routes_code ON routes(code);
@@ -553,6 +578,7 @@ CREATE INDEX IF NOT EXISTS idx_incidents_route ON incidents(route_id, status);
 CREATE INDEX IF NOT EXISTS idx_reports_route ON reports(route_id, status);
 CREATE INDEX IF NOT EXISTS idx_reports_user ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);
 
 -- ---------- Primer administrador ----------
 -- Ejecuta esto UNA vez con tu correo (los perfiles nuevos siempre son 'user'):

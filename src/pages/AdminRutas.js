@@ -2,6 +2,7 @@ import { adminService } from '../services/admin.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml, escapeAttr } from '../utils/sanitize.js';
 
 let currentFilters = { validationStatus: '', status: '', search: '' };
 let searchDebounce = null;
@@ -26,7 +27,7 @@ export async function renderPage(container) {
       <div class="page-toolbar">
         <div class="toolbar-search">
           <label for="admin-routes-search" class="sr-only">Buscar rutas</label>
-          <input type="text" id="admin-routes-search" class="form-input" placeholder="Buscar por código, nombre..." autocomplete="off" value="${currentFilters.search}">
+          <input type="text" id="admin-routes-search" class="form-input" placeholder="Buscar por código, nombre..." autocomplete="off" value="${escapeAttr(currentFilters.search)}">
         </div>
         <div class="toolbar-filters">
           <select id="admin-filter-validation" aria-label="Filtrar rutas por validación" class="form-input form-select">
@@ -161,9 +162,9 @@ function renderAdminRouteRow(route) {
 
   return `
     <tr data-route-id="${route.id}">
-      <td><span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span></td>
-      <td><strong>${route.name}</strong></td>
-      <td>${route.origin} → ${route.destination}</td>
+      <td><span class="route-badge" style="background: ${getRouteColor(route.code)}">${escapeHtml(route.code)}</span></td>
+      <td><strong>${escapeHtml(route.name)}</strong></td>
+      <td>${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</td>
       <td><span class="badge badge-${route.type === 'especial' ? 'warning' : 'info'}">${route.type === 'especial' ? 'Especial' : 'Regular'}</span></td>
       <td><span class="badge badge-${getStatusBadgeClass(status)}">${getStatusLabel(status)}</span></td>
       <td><span class="badge badge-${getValidationBadgeClass(validationStatus)}">${getValidationLabel(validationStatus)}</span></td>

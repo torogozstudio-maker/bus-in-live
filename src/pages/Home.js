@@ -8,6 +8,7 @@ import { geolocationService, GEOLOCATION_EVENTS } from '../services/geolocation.
 import { eventBus } from '../utils/eventBus.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 export async function renderPage(container, route) {
   const user = authService.getUser();
@@ -241,8 +242,8 @@ function renderFavorites(favorites) {
         </svg>
       </div>
       <div class="favorite-info">
-        <h4>${fav.route_id ? `Ruta ${r?.code || ''} ${r?.name || ''}`.trim() : `Parada: ${s?.name || ''}`}</h4>
-        <p class="favorite-meta">${fav.route_id && r ? `${r.origin || ''} → ${r.destination || ''}` : ''}</p>
+        <h4>${fav.route_id ? `Ruta ${escapeHtml(r?.code || '')} ${escapeHtml(r?.name || '')}`.trim() : `Parada: ${escapeHtml(s?.name || '')}`}</h4>
+        <p class="favorite-meta">${fav.route_id && r ? `${escapeHtml(r.origin || '')} → ${escapeHtml(r.destination || '')}` : ''}</p>
       </div>
     </a>
     `;
@@ -263,10 +264,10 @@ function renderRecentRoutes(routes) {
   section.style.display = 'block';
   container.innerHTML = routes.slice(0, 4).map(route => `
     <a href="/rutas/${route.id}" class="recent-route-item" data-link>
-      <div class="recent-route-badge">${route.code}</div>
+      <div class="recent-route-badge">${escapeHtml(route.code)}</div>
       <div class="recent-route-info">
-        <h4>${route.name}</h4>
-        <p class="recent-route-meta">${route.origin} → ${route.destination}</p>
+        <h4>${escapeHtml(route.name)}</h4>
+        <p class="recent-route-meta">${escapeHtml(route.origin)} → ${escapeHtml(route.destination)}</p>
       </div>
     </a>
   `).join('');
