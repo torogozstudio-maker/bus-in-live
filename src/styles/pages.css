@@ -613,3 +613,68 @@ p a, .auth-footer a, .footer-note a, .field-hint a, .form-hint a {
 /* Favoritos */
 .favorites-section { display: grid; gap: var(--spacing-3); }
 .remove-favorite-btn { flex-shrink: 0; }
+
+/* ---------- Hovers de tarjetas (subir 2px, escala suave, sombra roja) ---------- */
+.card,
+.route-card,
+.stop-card,
+.nearby-stop-item,
+.quick-action,
+.link-card,
+.admin-link-card,
+.favorite-item,
+.stat-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+@media (hover: hover) {
+  .card:hover,
+  .route-card:hover,
+  .stop-card:hover,
+  .nearby-stop-item:hover,
+  .quick-action:hover,
+  .link-card:hover,
+  .admin-link-card:hover,
+  .favorite-item:hover,
+  .stat-card:hover {
+    transform: translateY(-2px) scale(1.015);
+    box-shadow: 0 4px 14px rgb(212 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.08);
+    border-color: var(--primary);
+  }
+}
+
+.card:focus-visible,
+.route-card:focus-visible,
+.stop-card:focus-visible,
+.nearby-stop-item:focus-visible,
+.quick-action:focus-visible,
+.link-card:focus-visible,
+.admin-link-card:focus-visible,
+.favorite-item:focus-visible,
+.stat-card:focus-visible {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 4px 14px rgb(212 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.08);
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .card:hover,
+[data-theme="dark"] .route-card:hover,
+[data-theme="dark"] .stop-card:hover,
+[data-theme="dark"] .nearby-stop-item:hover,
+[data-theme="dark"] .quick-action:hover,
+[data-theme="dark"] .link-card:hover,
+[data-theme="dark"] .admin-link-card:hover,
+[data-theme="dark"] .favorite-item:hover,
+[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .card:focus-visible,
+[data-theme="dark"] .route-card:focus-visible,
+[data-theme="dark"] .stop-card:focus-visible,
+[data-theme="dark"] .nearby-stop-item:focus-visible,
+[data-theme="dark"] .quick-action:focus-visible,
+[data-theme="dark"] .link-card:focus-visible,
+[data-theme="dark"] .admin-link-card:focus-visible,
+[data-theme="dark"] .favorite-item:focus-visible,
+[data-theme="dark"] .stat-card:focus-visible {
+  box-shadow: 0 4px 14px rgb(239 68 68 / 0.2), 0 2px 6px rgb(0 0 0 / 0.3);
+  border-color: var(--primary);
+}
