@@ -609,3 +609,7 @@ p a, .auth-footer a, .footer-note a, .field-hint a, .form-hint a {
 [data-theme="dark"] .alert-success { color: #BBF7D0; }
 [data-theme="dark"] .alert-error { color: #FECACA; }
 [data-theme="dark"] .chip-primary { color: #FECACA; }
+
+/* Favoritos */
+.favorites-section { display: grid; gap: var(--spacing-3); }
+.remove-favorite-btn { flex-shrink: 0; }

@@ -57,6 +57,12 @@ const PAGE_TITLES = [
   ['/reset-password', 'Restablecer contraseña'],
   ['/perfil', 'Mi perfil'],
   ['/privacidad', 'Privacidad y GPS'],
+  ['/favoritos', 'Mis favoritos'],
+  ['/historial', 'Historial de viajes'],
+  ['/notificaciones', 'Notificaciones'],
+  ['/rutas/crear', 'Crear ruta'],
+  ['/rutas/editar', 'Editar ruta'],
+  ['/reportar/desvio', 'Reportar desvío'],
   ['/admin', 'Panel de administración'],
 ];
 
@@ -244,7 +250,7 @@ function setupAuthListeners() {
 function setupRouteGuards() {
   router.beforeEach(async (pathname) => {
     // El router ya entrega rutas internas (sin la base /bus-in-live/)
-    const publicRoutes = ['/', '/login', '/register', '/reset-password', '/auth/callback'];
+    const publicRoutes = ['/', '/login', '/register', '/reset-password', '/auth/callback', '/privacidad'];
     const isPublic = publicRoutes.some(r => pathname === r || (r !== '/' && pathname.startsWith(r + '/')));
 
     if (!isPublic && !authService.isAuthenticated()) {
@@ -326,46 +332,38 @@ export function createApp() {
     const { renderPage: render } = await import('./pages/Reportar.js');
     await render(getMain(), route);
   });
-  // router.add('/reportar/desvio', async (route) => {
-  //   const { renderPage: render } = await import('./pages/ReportarDesvio.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/rutas/crear', async (route) => {
-  //   const { renderPage: render } = await import('./pages/CrearRuta.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/rutas/:id/editar', async (route) => {
-  //   const { renderPage: render } = await import('./pages/EditarRuta.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/favoritos', async (route) => {
-  //   const { renderPage: render } = await import('./pages/Favoritos.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/historial', async (route) => {
-  //   const { renderPage: render } = await import('./pages/Historial.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/perfil', async (route) => {
-  //   const { renderPage: render } = await import('./pages/Perfil.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/privacidad', async (route) => {
-  //   const { renderPage: render } = await import('./pages/Privacidad.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/notificaciones', async (route) => {
-  //   const { renderPage: render } = await import('./pages/Notificaciones.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/rutas/crear', async (route) => {
-  //   const { renderPage: render } = await import('./pages/CrearRuta.js');
-  //   await render(getMain(), route);
-  // });
-  // router.add('/rutas/:id/editar', async (route) => {
-  //   const { renderPage: render } = await import('./pages/EditarRuta.js');
-  //   await render(getMain(), route);
-  // });
+  router.add('/reportar/desvio', async (route) => {
+    const { renderPage: render } = await import('./pages/Proximamente.js');
+    await render(getMain(), { ...route, params: { title: 'Reportar desvío', text: 'Esta función estará disponible próximamente. Por ahora puedes reportar un desvío desde la página de Reportar.' } });
+  });
+  router.add('/rutas/crear', async (route) => {
+    const { renderPage: render } = await import('./pages/Proximamente.js');
+    await render(getMain(), { ...route, params: { title: 'Crear ruta', text: 'Esta función estará disponible próximamente para colaboradores verificados.' } });
+  });
+  router.add('/rutas/:id/editar', async (route) => {
+    const { renderPage: render } = await import('./pages/Proximamente.js');
+    await render(getMain(), { ...route, params: { title: 'Editar ruta', text: 'Esta función estará disponible próximamente para administradores.' } });
+  });
+  router.add('/favoritos', async (route) => {
+    const { renderPage: render } = await import('./pages/Favoritos.js');
+    await render(getMain(), route);
+  });
+  router.add('/historial', async (route) => {
+    const { renderPage: render } = await import('./pages/Proximamente.js');
+    await render(getMain(), { ...route, params: { title: 'Historial de viajes', text: 'Tu historial de viajes estará disponible en una próxima actualización.' } });
+  });
+  router.add('/perfil', async (route) => {
+    const { renderPage: render } = await import('./pages/Perfil.js');
+    await render(getMain(), route);
+  });
+  router.add('/privacidad', async (route) => {
+    const { renderPage: render } = await import('./pages/Privacidad.js');
+    await render(getMain(), route);
+  });
+  router.add('/notificaciones', async (route) => {
+    const { renderPage: render } = await import('./pages/Proximamente.js');
+    await render(getMain(), { ...route, params: { title: 'Notificaciones', text: 'Las notificaciones estarán disponibles en una próxima actualización.' } });
+  });
   router.add('/admin', async (route) => {
     const { renderPage: render } = await import('./pages/AdminDashboard.js');
     await render(getMain(), route);
