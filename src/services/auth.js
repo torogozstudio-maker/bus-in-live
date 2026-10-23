@@ -20,11 +20,35 @@ function mapUser(supabaseUser) {
     email: supabaseUser.email,
     name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '',
     avatar: supabaseUser.user_metadata?.avatar_url || '',
-    role: supabaseUser.user_metadata?.role || 'user',
+    role: 'user',
     emailConfirmed: !!supabaseUser.email_confirmed_at,
     createdAt: supabaseUser.created_at,
     lastSignIn: supabaseUser.last_sign_in_at
   };
+}
+
+// El rol se lee SIEMPRE de la tabla profiles (RLS), nunca de user_metadata (que el usuario puede editar).
+async function loadProfileRole() {
+  const supabase = getSupabase();
+  if (!supabase || !currentUser) return;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role, nombre')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+    if (error) {
+      console.warn('No se pudo cargar el rol del perfil:', error.message);
+      return;
+    }
+    const newRole = data?.role ?? 'user';
+    const changed = currentUser.role !== newRole;
+    currentUser.role = newRole;
+    if (data?.nombre && !currentUser.name) currentUser.name = data.nombre;
+    if (changed) eventBus.emit(AUTH_EVENTS.USER_UPDATED, currentUser);
+  } catch (err) {
+    console.warn('No se pudo cargar el rol del perfil:', err);
+  }
 }
 
 export const authService = {
@@ -41,6 +65,7 @@ export const authService = {
     if (session) {
       currentSession = session;
       currentUser = mapUser(session.user);
+      await loadProfileRole();
     }
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -49,6 +74,8 @@ export const authService = {
 
       switch (event) {
         case 'SIGNED_IN':
+          // NO hacer await dentro del callback (puede bloquearse): diferir la carga del rol.
+          setTimeout(() => loadProfileRole(), 0);
           eventBus.emit(AUTH_EVENTS.SIGNED_IN, currentUser);
           break;
         case 'SIGNED_OUT':
@@ -56,6 +83,7 @@ export const authService = {
           break;
         case 'TOKEN_REFRESHED':
         case 'USER_UPDATED':
+          setTimeout(() => loadProfileRole(), 0);
           eventBus.emit(AUTH_EVENTS.USER_UPDATED, currentUser);
           break;
       }
@@ -95,6 +123,12 @@ export const authService = {
     });
 
     if (error) throw error;
+    // Si la sesión es inmediata (confirmación desactivada), cargar el rol antes de resolver.
+    if (data.session && data.user) {
+      currentUser = mapUser(data.user);
+      currentSession = data.session;
+      await loadProfileRole();
+    }
     return data;
   },
 
@@ -108,6 +142,10 @@ export const authService = {
     });
 
     if (error) throw error;
+    // Cargar el rol antes de resolver para que la guarda de /admin ya lo vea.
+    currentUser = mapUser(data.user);
+    currentSession = data.session;
+    await loadProfileRole();
     return data;
   },
 
