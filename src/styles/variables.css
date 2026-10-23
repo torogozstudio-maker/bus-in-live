@@ -21,6 +21,7 @@
   --warning-soft: #FEF9C3;
   --error: #DC2626;
   --error-soft: #FEE2E2;
+  --error-text: #B91C1C;
   --info: #2563EB;
   --info-soft: #DBEAFE;
 
@@ -94,6 +95,7 @@
   --warning-soft: #713F12;
   --error: #EF4444;
   --error-soft: #7F1D1D;
+  --error-text: #FCA5A5;
   --info: #3B82F6;
   --info-soft: #1E3A5F;
 

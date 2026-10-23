@@ -6,6 +6,7 @@ import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { icon } from '../utils/icons.js';
+import { setFieldError, clearFieldError, clearAllErrors, focusFirstInvalid } from '../utils/formValidation.js';
 
 let selectedRoute = null;
 let selectedStop = null;
@@ -31,12 +32,13 @@ export async function renderPage(container, route) {
             <div class="report-type-grid" id="report-types">
               ${REPORT_TYPES.map(type => `
                 <label class="report-type-option" data-type="${type}">
-                  <input type="radio" name="reportType" value="${type}" required>
+                  <input type="radio" name="reportType" value="${type}" required aria-describedby="report-types-error">
                   <div class="report-type-icon">${getReportTypeIcon(type)}</div>
                   <div class="report-type-label">${getReportTypeLabel(type)}</div>
                 </label>
               `).join('')}
             </div>
+            <p class="field-error" id="report-types-error" role="alert"></p>
           </div>
         </div>
 
@@ -47,7 +49,8 @@ export async function renderPage(container, route) {
           <div class="card-body">
             <div class="form-group">
               <label for="report-route-search" class="form-label">Buscar ruta</label>
-              <input type="text" id="report-route-search" class="form-input" placeholder="Número, nombre, origen, destino..." autocomplete="off">
+              <input type="text" id="report-route-search" class="form-input" placeholder="Número, nombre, origen, destino..." autocomplete="off" aria-describedby="report-route-search-error">
+              <p class="field-error" id="report-route-search-error" role="alert"></p>
               <div id="report-route-results" class="search-results" style="display: none;"></div>
             </div>
             <div id="selected-report-route" class="selected-route-display" style="display: none;"></div>
@@ -61,7 +64,7 @@ export async function renderPage(container, route) {
           <div class="card-body">
             <div class="form-group">
               <label for="report-stop-search" class="form-label">Buscar parada</label>
-              <input type="text" id="report-stop-search" class="form-input" placeholder="Nombre de la parada..." autocomplete="off">
+              <input type="text" id="report-stop-search" class="form-input" placeholder="Nombre de la parada..." autocomplete="off" aria-describedby="report-route-search-error">
               <div id="report-stop-results" class="search-results" style="display: none;"></div>
             </div>
             <div id="selected-report-stop" class="selected-route-display" style="display: none;"></div>
@@ -96,7 +99,8 @@ export async function renderPage(container, route) {
           <div class="card-body">
             <div class="form-group">
               <label for="report-description" class="form-label">Describe lo que ocurre *</label>
-              <textarea id="report-description" class="form-input" rows="4" required placeholder="Describe el problema con la mayor cantidad de detalles posible..."></textarea>
+              <textarea id="report-description" class="form-input" rows="4" required placeholder="Describe el problema con la mayor cantidad de detalles posible..." aria-describedby="report-description-error"></textarea>
+              <p class="field-error" id="report-description-error" role="alert"></p>
             </div>
             <div class="form-group">
               <label for="report-evidence" class="form-label">Evidencia (opcional)</label>
@@ -167,9 +171,15 @@ function attachListeners() {
       typeOptions.forEach(o => o.classList.remove('selected'));
       option.classList.add('selected');
       const type = option.dataset.type;
+      document.getElementById('report-types-error').textContent = '';
       showStepsForType(type);
     });
   });
+
+  const routeSearchInput = document.getElementById('report-route-search');
+  const descriptionInput = document.getElementById('report-description');
+  routeSearchInput.addEventListener('input', () => clearFieldError('report-route-search'));
+  descriptionInput.addEventListener('input', () => clearFieldError('report-description'));
 
   routeSearch.addEventListener('input', (e) => {
     clearTimeout(searchDebounce);
@@ -253,6 +263,7 @@ async function searchRoutesForReport(query) {
 
 function selectRouteForReport(route) {
   selectedRoute = route;
+  clearFieldError('report-route-search');
   document.getElementById('selected-report-route').innerHTML = `
     <div class="selected-route-card">
       <span class="route-badge" style="background: ${getRouteColor(route.code)}">${route.code}</span>
@@ -305,6 +316,7 @@ async function searchStopsForReport(query) {
 
 function selectStopForReport(stop) {
   selectedStop = stop;
+  clearFieldError('report-route-search');
   document.getElementById('selected-report-stop').innerHTML = `
     <div class="selected-route-card">
       <span class="route-badge" style="background: var(--info)">${stop.name}</span>
@@ -368,13 +380,24 @@ async function submitReport() {
   const description = formData.get('reportDescription');
   const locationDesc = formData.get('reportLocationDesc');
 
-  if (!type || !description) {
-    toastService.error('Completa todos los campos obligatorios');
-    return;
-  }
+  clearAllErrors(form);
+  document.getElementById('report-types-error').textContent = '';
 
+  let valid = true;
+  if (!type) {
+    document.getElementById('report-types-error').textContent = 'Selecciona el tipo de reporte';
+    valid = false;
+  }
   if (!selectedRoute && !selectedStop) {
-    toastService.error('Selecciona una ruta o parada afectada');
+    setFieldError('report-route-search', 'Selecciona una ruta o parada afectada');
+    valid = false;
+  }
+  if (!description || description.trim().length < 10) {
+    setFieldError('report-description', 'Describe el problema con al menos 10 caracteres');
+    valid = false;
+  }
+  if (!valid) {
+    focusFirstInvalid(form);
     return;
   }
 

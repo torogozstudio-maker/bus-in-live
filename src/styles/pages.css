@@ -678,3 +678,19 @@ p a, .auth-footer a, .footer-note a, .field-hint a, .form-hint a {
   box-shadow: 0 4px 14px rgb(239 68 68 / 0.2), 0 2px 6px rgb(0 0 0 / 0.3);
   border-color: var(--primary);
 }
+
+/* ---------- Avisos de validación por campo ---------- */
+.field-error {
+  margin: var(--spacing-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--error-text);
+}
+
+.form-input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+.form-input[aria-invalid="true"]:focus {
+  border-color: var(--error);
+  outline-color: var(--error);
+}

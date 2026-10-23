@@ -1,6 +1,7 @@
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { isValidEmail, setFieldError, clearFieldError, clearAllErrors, focusFirstInvalid } from '../utils/formValidation.js';
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -69,16 +70,37 @@ function attachListeners() {
   const submitBtn = document.getElementById('login-btn');
   const btnText = submitBtn.querySelector('.btn-text');
   const btnLoading = submitBtn.querySelector('.btn-loading');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+
+  // Limpiar avisos al corregir
+  emailInput.addEventListener('input', () => clearFieldError('email'));
+  passwordInput.addEventListener('input', () => clearFieldError('password'));
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAllErrors(form);
 
-    const formData = new FormData(form);
-    const email = formData.get('email').trim();
-    const password = formData.get('password');
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
-    if (!email || !password) {
-      toastService.error('Por favor completa todos los campos');
+    let valid = true;
+    if (!email) {
+      setFieldError('email', 'Ingresa tu correo electrónico');
+      valid = false;
+    } else if (!isValidEmail(email)) {
+      setFieldError('email', 'El formato del correo no es válido');
+      valid = false;
+    }
+    if (!password) {
+      setFieldError('password', 'Ingresa tu contraseña');
+      valid = false;
+    } else if (password.length < 6) {
+      setFieldError('password', 'La contraseña debe tener al menos 6 caracteres');
+      valid = false;
+    }
+    if (!valid) {
+      focusFirstInvalid(form);
       return;
     }
 

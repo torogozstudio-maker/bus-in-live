@@ -1,6 +1,7 @@
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { isValidEmail, setFieldError, clearFieldError, clearAllErrors, focusFirstInvalid } from '../utils/formValidation.js';
 
 export async function renderPage(container) {
   container.innerHTML = `
@@ -76,30 +77,54 @@ function attachListeners() {
   const submitBtn = document.getElementById('register-btn');
   const btnText = submitBtn.querySelector('.btn-text');
   const btnLoading = submitBtn.querySelector('.btn-loading');
+  const nameInput = document.getElementById('name');
+  const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const confirmInput = document.getElementById('confirmPassword');
 
+  // Limpiar avisos al corregir
+  nameInput.addEventListener('input', () => clearFieldError('name'));
+  emailInput.addEventListener('input', () => clearFieldError('email'));
+  passwordInput.addEventListener('input', () => clearFieldError('password'));
+  confirmInput.addEventListener('input', () => clearFieldError('confirmPassword'));
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAllErrors(form);
 
-    const formData = new FormData(form);
-    const name = formData.get('name').trim();
-    const email = formData.get('email').trim();
-    const password = formData.get('password');
-    const confirmPassword = formData.get('confirmPassword');
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const confirmPassword = confirmInput.value;
 
-    if (!name || !email || !password) {
-      toastService.error('Por favor completa todos los campos');
-      return;
+    let valid = true;
+    if (!name) {
+      setFieldError('name', 'Ingresa tu nombre');
+      valid = false;
     }
-
-    if (password.length < 8) {
-      toastService.error('La contraseña debe tener al menos 8 caracteres');
-      return;
+    if (!email) {
+      setFieldError('email', 'Ingresa tu correo electrónico');
+      valid = false;
+    } else if (!isValidEmail(email)) {
+      setFieldError('email', 'El formato del correo no es válido');
+      valid = false;
     }
-
-    if (password !== confirmPassword) {
-      toastService.error('Las contraseñas no coinciden');
+    if (!password) {
+      setFieldError('password', 'Ingresa una contraseña');
+      valid = false;
+    } else if (password.length < 6) {
+      setFieldError('password', 'La contraseña debe tener al menos 6 caracteres');
+      valid = false;
+    }
+    if (!confirmPassword) {
+      setFieldError('confirmPassword', 'Confirma tu contraseña');
+      valid = false;
+    } else if (password !== confirmPassword) {
+      setFieldError('confirmPassword', 'Las contraseñas no coinciden');
+      valid = false;
+    }
+    if (!valid) {
+      focusFirstInvalid(form);
       return;
     }
 

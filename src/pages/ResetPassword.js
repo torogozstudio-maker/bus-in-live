@@ -1,6 +1,7 @@
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { isValidEmail, setFieldError, clearFieldError, clearAllErrors, focusFirstInvalid } from '../utils/formValidation.js';
 
 export async function renderPage(container, route) {
   const isReset = route.pathname.includes('reset-password') && route.query.get('token');
@@ -57,15 +58,29 @@ function attachListeners(isReset) {
   const btnText = submitBtn.querySelector('.btn-text');
   const btnLoading = submitBtn.querySelector('.btn-loading');
 
+  // Limpiar avisos al corregir
+  form.querySelectorAll('.form-input').forEach(input => {
+    input.addEventListener('input', () => clearFieldError(input.id));
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAllErrors(form);
 
     const formData = new FormData(form);
 
     if (!isReset) {
       const email = formData.get('email').trim();
+      let valid = true;
       if (!email) {
-        toastService.error('Ingresa tu correo electrónico');
+        setFieldError('email', 'Ingresa tu correo electrónico');
+        valid = false;
+      } else if (!isValidEmail(email)) {
+        setFieldError('email', 'El formato del correo no es válido');
+        valid = false;
+      }
+      if (!valid) {
+        focusFirstInvalid(form);
         return;
       }
 
@@ -84,13 +99,23 @@ function attachListeners(isReset) {
       const password = formData.get('password');
       const confirmPassword = formData.get('confirmPassword');
 
-      if (!password || password.length < 8) {
-        toastService.error('La contraseña debe tener al menos 8 caracteres');
-        return;
+      let valid = true;
+      if (!password) {
+        setFieldError('password', 'Ingresa una nueva contraseña');
+        valid = false;
+      } else if (password.length < 6) {
+        setFieldError('password', 'La contraseña debe tener al menos 6 caracteres');
+        valid = false;
       }
-
-      if (password !== confirmPassword) {
-        toastService.error('Las contraseñas no coinciden');
+      if (!confirmPassword) {
+        setFieldError('confirmPassword', 'Confirma tu contraseña');
+        valid = false;
+      } else if (password !== confirmPassword) {
+        setFieldError('confirmPassword', 'Las contraseñas no coinciden');
+        valid = false;
+      }
+      if (!valid) {
+        focusFirstInvalid(form);
         return;
       }
 
