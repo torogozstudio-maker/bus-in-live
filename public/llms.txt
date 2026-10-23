@@ -1,0 +1,16 @@
+# bus-in-live
+
+> Aplicación web colaborativa de transporte público para Santa Ana, El Salvador. Permite consultar rutas y paradas de bus, encontrar paradas cercanas, compartir un viaje para estimar llegadas y reportar problemas (retrasos, desvíos, accidentes) con ayuda de la comunidad. Es un proyecto educativo en desarrollo.
+
+## Páginas públicas
+- [Inicio](https://torogozstudio-maker.github.io/bus-in-live/): presentación de la aplicación y accesos rápidos.
+- [Iniciar sesión](https://torogozstudio-maker.github.io/bus-in-live/login): acceso con correo o Google.
+- [Crear cuenta](https://torogozstudio-maker.github.io/bus-in-live/register): registro gratuito.
+
+## Más información
+- [Descripción completa](https://torogozstudio-maker.github.io/bus-in-live/llms-full.txt): funciones, privacidad, tecnología y limitaciones.
+- [Código fuente](https://github.com/torogozstudio-maker/bus-in-live): repositorio del proyecto.
+
+## Notas
+- El mapa, las rutas y las paradas se muestran a usuarios registrados.
+- Los datos los aporta la comunidad y pueden estar incompletos; no son información oficial de horarios.

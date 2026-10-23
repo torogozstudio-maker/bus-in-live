@@ -29,13 +29,13 @@ export async function renderPage(container) {
           <input type="text" id="admin-routes-search" class="form-input" placeholder="Buscar por código, nombre..." autocomplete="off" value="${currentFilters.search}">
         </div>
         <div class="toolbar-filters">
-          <select id="admin-filter-validation" class="form-input form-select">
+          <select id="admin-filter-validation" aria-label="Filtrar rutas por validación" class="form-input form-select">
             <option value="">Todas</option>
             <option value="pending" ${currentFilters.validationStatus === 'pending' ? 'selected' : ''}>Pendientes</option>
             <option value="approved" ${currentFilters.validationStatus === 'approved' ? 'selected' : ''}>Aprobadas</option>
             <option value="rejected" ${currentFilters.validationStatus === 'rejected' ? 'selected' : ''}>Rechazadas</option>
           </select>
-          <select id="admin-filter-status" class="form-input form-select">
+          <select id="admin-filter-status" aria-label="Filtrar rutas por estado" class="form-input form-select">
             <option value="">Todos los estados</option>
             <option value="normal" ${currentFilters.status === 'normal' ? 'selected' : ''}>Normal</option>
             <option value="delay" ${currentFilters.status === 'delay' ? 'selected' : ''}>Retraso</option>

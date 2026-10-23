@@ -18,12 +18,12 @@ export async function renderPage(container) {
           <input type="text" id="routes-search" class="form-input" placeholder="Buscar por número, nombre, origen, destino..." autocomplete="off">
         </div>
         <div class="toolbar-filters">
-          <select id="filter-type" class="form-input form-select">
+          <select id="filter-type" aria-label="Filtrar rutas por tipo" class="form-input form-select">
             <option value="">Todos los tipos</option>
             <option value="regular">Regular</option>
             <option value="especial">Especial</option>
           </select>
-          <select id="filter-status" class="form-input form-select">
+          <select id="filter-status" aria-label="Filtrar rutas por estado" class="form-input form-select">
             <option value="">Todos los estados</option>
             <option value="normal">Normal</option>
             <option value="delay">Retraso</option>

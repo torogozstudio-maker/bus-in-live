@@ -26,7 +26,7 @@ export async function renderPage(container) {
 
       <div class="page-toolbar" style="margin-top: 16px;">
         <div class="toolbar-filters">
-          <select id="admin-requests-filter-status" class="form-input form-select">
+          <select id="admin-requests-filter-status" aria-label="Filtrar solicitudes por estado" class="form-input form-select">
             <option value="">Todos los estados</option>
             <option value="pending" ${currentFilters.status === 'pending' ? 'selected' : ''}>Pendientes</option>
             <option value="approved" ${currentFilters.status === 'approved' ? 'selected' : ''}>Aprobadas</option>

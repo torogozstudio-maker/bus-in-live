@@ -24,7 +24,7 @@ export async function renderPage(container, route) {
       <form id="report-form" class="report-form" novalidate>
         <div class="card">
           <div class="card-header">
-            <h3>1. ¿Qué quieres reportar?</h3>
+            <h2>1. ¿Qué quieres reportar?</h2>
           </div>
           <div class="card-body">
             <div class="report-type-grid" id="report-types">
@@ -41,7 +41,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="display: none;" id="route-step">
           <div class="card-header">
-            <h3>2. Selecciona la ruta afectada</h3>
+            <h2>2. Selecciona la ruta afectada</h2>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -55,7 +55,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="display: none;" id="stop-step">
           <div class="card-header">
-            <h3>2. Selecciona la parada afectada</h3>
+            <h2>2. Selecciona la parada afectada</h2>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -69,7 +69,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="display: none;" id="location-step">
           <div class="card-header">
-            <h3>Ubicación del problema</h3>
+            <h2>Ubicación del problema</h2>
           </div>
           <div class="card-body">
             <div id="report-location-status" class="location-status">
@@ -90,7 +90,7 @@ export async function renderPage(container, route) {
 
         <div class="card" id="details-step" style="display: none;">
           <div class="card-header">
-            <h3>Detalles del reporte</h3>
+            <h2>Detalles del reporte</h2>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -107,7 +107,7 @@ export async function renderPage(container, route) {
 
         <div class="card" id="submit-step" style="display: none;">
           <div class="card-header">
-            <h3>Enviar reporte</h3>
+            <h2>Enviar reporte</h2>
           </div>
           <div class="card-body">
             <div class="alert alert-info">

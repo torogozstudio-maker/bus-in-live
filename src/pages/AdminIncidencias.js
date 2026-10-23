@@ -24,7 +24,7 @@ export async function renderPage(container) {
 
       <div class="page-toolbar">
         <div class="toolbar-filters">
-          <select id="admin-incidents-filter-status" class="form-input form-select">
+          <select id="admin-incidents-filter-status" aria-label="Filtrar incidencias por estado" class="form-input form-select">
             <option value="">Todas</option>
             <option value="active" ${currentFilters.status === 'active' ? 'selected' : ''}>Activas</option>
             <option value="resolved" ${currentFilters.status === 'resolved' ? 'selected' : ''}>Resueltas</option>

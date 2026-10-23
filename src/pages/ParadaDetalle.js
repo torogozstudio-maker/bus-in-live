@@ -1,3 +1,4 @@
+import { loadLeaflet } from '../utils/leaflet.js';
 import { stopService } from '../services/stops.js';
 import { routeService } from '../services/routes.js';
 import { etaService } from '../services/eta.js';
@@ -171,7 +172,7 @@ function attachStopDetailListeners(stopId, stop) {
 }
 
 async function initStopMap(stop) {
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
   const mapEl = document.getElementById('stop-map');
   if (!mapEl || !stop.latitude || !stop.longitude) return;
 

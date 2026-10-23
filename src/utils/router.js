@@ -25,6 +25,7 @@ const routes = new Map();
 let currentRoute = null;
 let notFoundHandler = null;
 let beforeEachGuards = [];
+let afterEachHooks = [];
 
 function parsePath(path) {
   const [rawPathname, search] = path.split('?');
@@ -71,6 +72,12 @@ export const router = {
     return this;
   },
 
+  /** Se ejecuta después de pintar cada pantalla (por ejemplo, para actualizar el título). */
+  afterEach(hook) {
+    afterEachHooks.push(hook);
+    return this;
+  },
+
   async navigate(path, replace = false) {
     const { pathname, query, params: urlParams, search } = parsePath(path);
 
@@ -98,6 +105,8 @@ export const router = {
       currentRoute = { pattern: null, params: urlParams, query, pathname };
       await notFoundHandler(currentRoute);
     }
+
+    for (const hook of afterEachHooks) hook(currentRoute);
 
     const url = withBase(pathname) + search;
     if (replace) {

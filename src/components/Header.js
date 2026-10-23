@@ -27,12 +27,10 @@ export function renderHeader(isMobile) {
   return `
     <div class="header-container">
       <div class="header-left">
-        ${isMobile ? `
-          <button id="menu-btn" class="btn btn-ghost btn-icon" aria-label="Abrir menú" aria-expanded="false">
+          <button id="menu-btn" class="btn btn-ghost btn-icon" aria-label="${isMobile ? 'Abrir menú' : 'Ocultar menú lateral'}" aria-expanded="${isMobile ? 'false' : 'true'}" aria-controls="app-sidebar">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
-        ` : ''}
-        <a href="/" class="header-brand" data-link>
+        <a href="/" class="header-brand" data-link aria-label="bus-in-live, ir al inicio">
           <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
           <span class="brand-text">bus-in-live</span>
         </a>
@@ -61,10 +59,10 @@ export function renderHeader(isMobile) {
           </div>
           <div class="user-menu" style="position: relative; margin-left: 12px;">
             <button id="user-menu-btn" class="btn btn-ghost user-menu-btn" aria-label="Menú de usuario" aria-expanded="false" aria-haspopup="true">
-              <div class="avatar avatar-sm" style="background-color: var(--primary);">${user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</div>
+              <div class="avatar avatar-sm" style="background-color: var(--primary-action);">${user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</div>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
-            <div id="user-dropdown" class="dropdown-menu" role="menu" style="display: none; min-width: 220px;">
+            <div id="user-dropdown" class="dropdown-menu" role="menu" style="min-width: 220px;">
               <div class="dropdown-header" style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
                 <div style="font-weight: 600; font-size: var(--text-sm);">${user?.name || 'Usuario'}</div>
                 <div style="font-size: var(--text-xs); color: var(--muted);">${user?.email}</div>
@@ -121,7 +119,7 @@ function getIcon(name) {
     'alert-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
     'clipboard-list': '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path><line x1="9" y1="15" x2="19" y2="15"></line><line x1="9" y1="19" x2="15" y2="19"></line>',
     star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>',
-    history: '<path d="M12 3v6l4 4"></path><path d="M12 3a10 10 0 1 1 9.54 13.6"></path>',
+    history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path>',
     user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
     shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
     bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path>'

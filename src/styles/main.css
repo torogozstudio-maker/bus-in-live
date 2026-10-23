@@ -22,12 +22,12 @@
 }
 
 .btn-primary {
-  background-color: var(--primary);
+  background-color: var(--primary-action);
   color: #FFFFFF;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-dark);
+  background-color: var(--primary-action-hover);
 }
 
 .btn-secondary {
@@ -487,7 +487,7 @@
 }
 
 .tab-active {
-  color: var(--primary);
+  color: var(--link);
   border-bottom-color: var(--primary);
 }
 
@@ -734,7 +734,7 @@
 
 .search-result-code {
   font-weight: 600;
-  color: var(--primary);
+  color: var(--link);
   font-size: var(--text-sm);
   min-width: 50px;
 }

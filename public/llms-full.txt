@@ -1,0 +1,32 @@
+# bus-in-live (descripción completa)
+
+> Aplicación web colaborativa de transporte público para Santa Ana, El Salvador. Proyecto educativo de Torogoz Studio, desarrollado con asistencia de inteligencia artificial.
+
+## Qué problema resuelve
+Mucha gente que usa el bus en Santa Ana no sabe qué rutas pasan por una parada, dónde está su bus ni cuándo llegará, y no existe un lugar donde la comunidad avise de retrasos, desvíos o incidentes. bus-in-live reúne esa información en un solo sitio y la mantiene viva con aportes de los propios usuarios.
+
+## Funciones
+- Mapa de rutas y paradas con OpenStreetMap.
+- Listado y detalle de rutas, con sus paradas y variantes.
+- Paradas cercanas a la ubicación del usuario (solo si da permiso de ubicación).
+- "Estoy viajando": el usuario puede compartir su ubicación durante un viaje para ayudar a estimar llegadas.
+- Reportes de problemas: accidente, tráfico, avería, desvío, información incorrecta, entre otros.
+- Panel de administración para revisar y aprobar rutas, reportes e incidencias.
+- Modo claro y oscuro, diseño adaptable a celular y escritorio.
+
+## Privacidad
+- La ubicación solo se usa con el consentimiento del usuario.
+- Los viajes y los puntos de ubicación son privados de cada cuenta.
+- Los reportes pendientes solo los ven su autor y los administradores.
+
+## Tecnología
+Aplicación de una sola página (JavaScript con Vite), Supabase (autenticación y base de datos PostgreSQL con seguridad por filas), Leaflet y OpenStreetMap para los mapas, publicada en GitHub Pages.
+
+## Estado y límites
+- Es un prototipo: algunas pantallas aún no existen y el cálculo de llegadas es aproximado.
+- Las rutas y paradas las aporta la comunidad y pasan por revisión; pueden contener errores.
+- El mapa, las rutas y las paradas requieren iniciar sesión.
+
+## Contacto y código
+- Repositorio y reporte de problemas: https://github.com/torogozstudio-maker/bus-in-live
+- Sitio: https://torogozstudio-maker.github.io/bus-in-live/

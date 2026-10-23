@@ -1,3 +1,4 @@
+import { loadLeaflet } from '../utils/leaflet.js';
 import { routeService } from '../services/routes.js';
 import { stopService } from '../services/stops.js';
 import { incidentService } from '../services/incidents.js';
@@ -23,6 +24,7 @@ let userLocation = null;
 export async function renderPage(container) {
   container.innerHTML = `
     <div class="map-page">
+    <h1 class="sr-only">Mapa de rutas y paradas</h1>
       <div class="map-header">
         <div class="map-search">
           <label for="route-search" class="sr-only">Buscar ruta</label>
@@ -105,7 +107,7 @@ export async function renderPage(container) {
 }
 
 async function initMap() {
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
 
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
@@ -241,7 +243,7 @@ async function loadInitialData() {
 
 async function loadRoutes() {
   const { data: routes } = await routeService.getRoutes({ city: getCurrentCity() });
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
 
   routesLayer.clearLayers();
 
@@ -267,7 +269,7 @@ async function loadRoutes() {
 
 async function loadIncidents() {
   const { data: incidents } = await incidentService.getIncidents({ activeOnly: true });
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
 
   incidentsLayer.clearLayers();
 
@@ -290,7 +292,7 @@ async function selectRoute(routeId) {
   const { data: route } = await routeService.getRouteById(routeId);
   if (!route) return;
 
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
 
   routesLayer.clearLayers();
   stopsLayer.clearLayers();
@@ -347,7 +349,7 @@ async function selectRoute(routeId) {
 
 async function loadRouteObservations(routeId) {
   const { data: observations } = await routeService.getRouteObservations(routeId, selectedVariantId);
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
 
   observationsLayer.clearLayers();
 

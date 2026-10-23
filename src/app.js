@@ -21,6 +21,7 @@ function detectMobile() {
 function createAppLayout() {
   const app = document.getElementById('app');
   app.innerHTML = `
+    <a class="skip-link" href="#app-main" id="skip-link">Saltar al contenido</a>
     <div class="app-layout">
       <header class="app-header" id="app-header"></header>
       <div class="app-main-wrapper">
@@ -32,6 +33,37 @@ function createAppLayout() {
     </div>
   `;
   appContainer = app;
+
+  // El enlace de salto no debe cambiar la URL (el router escucha popstate): solo mueve el foco.
+  document.getElementById('skip-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    const main = document.getElementById('app-main');
+    main.setAttribute('tabindex', '-1');
+    main.focus();
+  });
+}
+
+const SITE_NAME = 'bus-in-live';
+const PAGE_TITLES = [
+  ['/', 'bus-in-live · Transporte público colaborativo en Santa Ana'],
+  ['/mapa', 'Mapa de rutas y paradas'],
+  ['/rutas', 'Rutas de bus'],
+  ['/paradas-cercanas', 'Paradas cercanas'],
+  ['/paradas', 'Paradas'],
+  ['/viajar', 'Estoy viajando'],
+  ['/reportar', 'Reportar un problema'],
+  ['/login', 'Iniciar sesión'],
+  ['/register', 'Crear cuenta'],
+  ['/reset-password', 'Restablecer contraseña'],
+  ['/perfil', 'Mi perfil'],
+  ['/privacidad', 'Privacidad y GPS'],
+  ['/admin', 'Panel de administración'],
+];
+
+function titleFor(pathname) {
+  if (pathname === '/') return PAGE_TITLES[0][1];
+  const hit = PAGE_TITLES.find(([p]) => p !== '/' && (pathname === p || pathname.startsWith(p + '/')));
+  return hit ? `${hit[1]} · ${SITE_NAME}` : `Página no encontrada · ${SITE_NAME}`;
 }
 
 function updateLayout() {
@@ -84,10 +116,31 @@ function attachLayoutListeners() {
   if (userMenuBtn && userDropdown) {
     userMenuBtn.onclick = (e) => {
       e.stopPropagation();
-      userDropdown.classList.toggle('open');
+      const open = userDropdown.classList.toggle('open');
+      userMenuBtn.setAttribute('aria-expanded', String(open));
     };
     document.addEventListener('click', closeUserDropdown);
+    if (!escapeBound) {
+      escapeBound = true;
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeUserDropdown(); });
+    }
   }
+
+  // Cerrar sesión (menú de usuario y menú lateral). El evento SIGNED_OUT actualiza el layout y vuelve al inicio.
+  document.querySelectorAll('#sign-out-btn, #sidebar-signout').forEach((btn) => {
+    btn.onclick = async () => {
+      closeSidebar();
+      closeUserDropdown();
+      try {
+        await authService.signOut();
+      } catch (error) {
+        console.error('No se pudo cerrar la sesión:', error);
+        toastService.error('No se pudo cerrar la sesión. Inténtalo de nuevo.');
+      }
+    };
+  });
+
+  applySidebarPreference();
 
   const navLinks = document.querySelectorAll('[data-nav-link]');
   navLinks.forEach(link => {
@@ -111,7 +164,28 @@ function attachLayoutListeners() {
   });
 }
 
+const SIDEBAR_KEY = 'bus-in-live-sidebar';
+
+// En escritorio el menú lateral se puede ocultar y la preferencia se recuerda.
+function applySidebarPreference() {
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(SIDEBAR_KEY) === 'collapsed'; } catch (e) { /* sin almacenamiento */ }
+  const hide = !isMobile && collapsed;
+  document.body.classList.toggle('sidebar-collapsed', hide);
+  const btn = document.getElementById('menu-btn');
+  if (btn && !isMobile) {
+    btn.setAttribute('aria-expanded', String(!hide));
+    btn.setAttribute('aria-label', hide ? 'Mostrar menú lateral' : 'Ocultar menú lateral');
+  }
+}
+
 function toggleSidebar() {
+  if (!isMobile) {
+    const hide = !document.body.classList.contains('sidebar-collapsed');
+    try { localStorage.setItem(SIDEBAR_KEY, hide ? 'collapsed' : 'expanded'); } catch (e) { /* sin almacenamiento */ }
+    applySidebarPreference();
+    return;
+  }
   const sidebar = document.getElementById('app-sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   sidebar.classList.toggle('open');
@@ -127,9 +201,13 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
+let escapeBound = false;
+
 function closeUserDropdown() {
   const dropdown = document.getElementById('user-dropdown');
   if (dropdown) dropdown.classList.remove('open');
+  const btn = document.getElementById('user-menu-btn');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
 function handleResize() {
@@ -149,7 +227,10 @@ function setupAuthListeners() {
   eventBus.on(AUTH_EVENTS.SIGNED_OUT, () => {
     updateLayout();
     geolocationService.stopTracking();
-    tripSessionService.endCurrentSession();
+    // Si había un viaje en curso, se cierra (endSession solo actúa cuando hay uno activo)
+    if (tripSessionService.isActive()) {
+      tripSessionService.endSession().catch((error) => console.error('No se pudo cerrar el viaje:', error));
+    }
     router.navigate('/');
     toastService.info('Sesión cerrada');
   });
@@ -185,6 +266,7 @@ export function createApp() {
   updateLayout();
   setupAuthListeners();
   setupRouteGuards();
+  router.afterEach((route) => { document.title = titleFor(route.pathname); });
   themeService.init();
   toastService.init();
 

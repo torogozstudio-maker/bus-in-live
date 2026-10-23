@@ -1,3 +1,4 @@
+import { loadLeaflet } from '../utils/leaflet.js';
 import { routeService } from '../services/routes.js';
 import { tripSessionService, TRIP_EVENTS } from '../services/tripSession.js';
 import { geolocationService, GEOLOCATION_EVENTS } from '../services/geolocation.js';
@@ -29,7 +30,7 @@ export async function renderPage(container, route) {
       <div id="trip-setup" class="trip-setup">
         <div class="card">
           <div class="card-header">
-            <h3>1. Selecciona tu ruta</h3>
+            <h2>1. Selecciona tu ruta</h2>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -43,7 +44,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="display: none;" id="variant-step">
           <div class="card-header">
-            <h3>2. Selecciona la variante (opcional)</h3>
+            <h2>2. Selecciona la variante (opcional)</h2>
           </div>
           <div class="card-body">
             <p class="form-hint">Si no estás seguro, déjalo en "No directo" (por defecto)</p>
@@ -61,7 +62,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="display: none;" id="consent-step">
           <div class="card-header">
-            <h3>3. Compartir ubicación</h3>
+            <h2>3. Compartir ubicación</h2>
           </div>
           <div class="card-body">
             <div class="alert alert-info">
@@ -97,7 +98,7 @@ export async function renderPage(container, route) {
       <div id="trip-active" class="trip-active" style="display: none;">
         <div class="trip-header-card card">
           <div class="trip-route-info">
-            <span class="route-badge" id="active-route-badge" style="background: var(--primary)"></span>
+            <span class="route-badge" id="active-route-badge" style="background: var(--primary-action)"></span>
             <div>
               <h3 id="active-route-name"></h3>
               <p id="active-route-variant"></p>
@@ -154,7 +155,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="margin-top: 16px;">
           <div class="card-header">
-            <h3>Mapa del viaje</h3>
+            <h2>Mapa del viaje</h2>
           </div>
           <div class="card-body" style="padding: 0;">
             <div id="trip-map" class="map-container" style="height: 300px;"></div>
@@ -163,7 +164,7 @@ export async function renderPage(container, route) {
 
         <div class="card" style="margin-top: 16px;">
           <div class="card-header">
-            <h3>Detalles del seguimiento</h3>
+            <h2>Detalles del seguimiento</h2>
           </div>
           <div class="card-body">
             <div class="trip-details">
@@ -443,7 +444,7 @@ function stopPositionUpdates() {
 }
 
 async function initTripMap() {
-  L = (await import('leaflet')).default;
+  L = await loadLeaflet();
   const mapEl = document.getElementById('trip-map');
   if (!mapEl) return;
 

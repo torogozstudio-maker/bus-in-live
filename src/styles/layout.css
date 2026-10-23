@@ -194,7 +194,7 @@
   font-size: var(--text-sm);
   font-weight: 700;
   color: #FFFFFF;
-  background-color: var(--primary);
+  background-color: var(--primary-action);
 }
 
 .avatar-sm {
@@ -259,7 +259,7 @@
 
 .bottom-nav-item:hover,
 .bottom-nav-item.active {
-  color: var(--primary);
+  color: var(--link);
 }
 
 .bottom-nav-icon {
@@ -280,7 +280,7 @@
 }
 
 .bottom-nav-action {
-  color: var(--primary);
+  color: var(--link);
 }
 
 /* ---------- Móvil: sidebar como panel deslizable ---------- */
@@ -341,3 +341,38 @@
   padding: 0;
   border-bottom: none; /* el borde lo dibuja .header-container */
 }
+
+/* ---------- Accesibilidad ---------- */
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: var(--spacing-3);
+  z-index: calc(var(--z-toast) + 1);
+  padding: var(--spacing-2) var(--spacing-4);
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: var(--primary-action);
+  border-radius: var(--radius);
+}
+.skip-link:focus { top: var(--spacing-3); color: #FFFFFF; }
+
+/* Respeta a quien pide menos movimiento en su sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* El mapa no debe tapar el menú, el sidebar ni los avisos (Leaflet usa z-index hasta 1000) */
+.leaflet-container,
+.map-page { isolation: isolate; }
+
+/* Escritorio: menú lateral oculto por el usuario (botón de la cabecera) */
+body.sidebar-collapsed .app-sidebar { display: none; }
+
+/* Menú de usuario de la cabecera: oculto hasta que el código le pone la clase "open" */
+#user-dropdown { display: none; }
+#user-dropdown.open { display: block; }

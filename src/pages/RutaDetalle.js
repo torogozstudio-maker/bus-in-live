@@ -1,3 +1,4 @@
+import { loadLeaflet } from '../utils/leaflet.js';
 import { routeService } from '../services/routes.js';
 import { stopService } from '../services/stops.js';
 import { incidentService } from '../services/incidents.js';
@@ -391,7 +392,7 @@ function attachRouteDetailListeners(routeId) {
 }
 
 async function initRouteMap(routeId) {
-  const L = (await import('leaflet')).default;
+  const L = await loadLeaflet();
   const mapEl = document.getElementById('route-map');
   if (!mapEl) return;
 
