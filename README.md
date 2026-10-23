@@ -123,6 +123,11 @@ En Settings > API:
 - **Project URL** → `VITE_SUPABASE_URL`
 - **anon public key** → `VITE_SUPABASE_ANON_KEY`
 
+### 6. (Opcional) Push notifications
+
+Requiere generar claves VAPID y desplegar la Edge Function `send-push`.
+Pasos completos en [`docs/push.md`](docs/push.md).
+
 ## Base de datos (Resumen de tablas)
 
 | Tabla | Descripción |
@@ -145,6 +150,7 @@ En Settings > API:
 | `search_history` | Historial de búsquedas |
 | `notification_preferences` | Preferencias de notificaciones |
 | `user_consents` | Consentimientos GPS/privacidad |
+| `push_subscriptions` | Suscripciones Web Push (VAPID) |
 
 ## Despliegue
 
@@ -167,6 +173,7 @@ npm run build    # Build de producción
 npm run preview  # Preview del build
 npm run lint     # ESLint
 npm run format   # Prettier
+npm test         # Tests unitarios (Vitest)
 ```
 
 ## Principios de diseño

@@ -22,14 +22,18 @@ Frontend (Vanilla JS + Vite)
     │   ├── geolocation.js - GPS navegador
     │   ├── tripSession.js - Sesiones "estoy viajando"
     │   ├── admin.js - Panel administración
+    │   ├── notifications.js - Web Push (suscripción VAPID)
     │   └── toast.js - Notificaciones
     │
+    ├── Utils (sanitize.js XSS, router, formValidation, icons)
     ├── Components (Header, BottomNav, Sidebar)
-    ├── Pages (25+ páginas)
+    ├── Pages (28 páginas, incluye Crear/Editar ruta, Notificaciones, Historial)
+    ├── tests/ (Vitest: sanitize, router, formValidation, eta)
     └── Styles (CSS variables + componentes)
 ```
 
 **Backend**: Supabase (PostgreSQL + Auth + Realtime + RLS + Storage)
+**Backend push**: Edge Function `supabase/functions/send-push` (ver `docs/push.md`)
 **Mapas**: Leaflet + OpenStreetMap (abstracción MapProvider para migración futura)
 
 ## Reglas del proyecto (CRÍTICAS)
@@ -98,8 +102,11 @@ export async function renderPage(container, route) {
 npm run dev      # Dev server (localhost:3000)
 npm run build    # Build producción → dist/
 npm run preview  # Preview build
-npm run lint     # ESLint
+npm run lint     # ESLint (0 errores obligatorio)
 npm run format   # Prettier
+npm test         # Vitest (obligatorio antes de push)
+npm run test:watch
+node scripts/check-css.mjs   # Verifica estilos (0 estilos faltantes)
 ```
 
 ## Estructura de base de datos
@@ -144,12 +151,18 @@ Ver `database/schema.sql` para DDL completo con:
 9. **REVISA CALIDAD** - Lint, format, tipos
 10. **EXPLICA** - Qué funciona, qué no, qué falta
 
-## Testing prioritario
+## Testing
+
+Cubierto hoy (Vitest, `tests/`): sanitize/XSS, router (guards/params/base),
+formValidation, helpers de ETA (distancia, velocidad, percentiles,
+predicción por hora/día). Ejecutar `npm test` antes de cada push
+(lo corre la CI en `.github/workflows/deploy.yml`).
+
+Pendiente de cubrir:
 
 - Auth: login, register, OAuth, password reset, session persist
 - Permisos: RLS, admin vs user, soft delete
-- Geo: distance, speed, position-on-route, invalid GPS
-- ETA: cálculo, confidence, historical fallback
+- Geo: position-on-route con datos reales, invalid GPS
 - Filtros: rutas, paradas, estados
 - CRUD rutas: create, edit, versionado, delete request
 - Reportes: create, duplicate check, moderation
@@ -167,6 +180,7 @@ Ver `database/schema.sql` para DDL completo con:
 | `src/services/eta.js` | Haversine, speed, map-matching, ETA, confidence |
 | `src/services/tripSession.js` | Start/end trip, buffer positions, flush to DB |
 | `src/utils/router.js` | SPA router con guards y params |
+| `src/utils/sanitize.js` | escapeHtml/escapeAttr/safeUrl (XSS) |
 | `src/styles/variables.css` | Design system (colores, spacing, typography) |
 | `database/schema.sql` | DDL completo + RLS + RPC + triggers |
 
@@ -179,20 +193,23 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 
 ## Limitaciones actuales (BETA 1)
 
-- ETA básico (velocidad actual + distancia, sin histórico ponderado)
+- ETA con histórico ponderado + predicción por hora/día (falta tráfico y calendario)
 - Map matching simple (distancia punto-línea, sin grafo vial)
 - Frecuencia: mediana de intervalos en terminal (mín 3 obs)
 - Confianza: heurística simple (cantidad, recencia, precisión)
-- No hay predicción por hora/tráfico/día (BETA 2)
-- Notificaciones push: solo navegador (Service Worker básico)
-- Admin: UI básica, sin analytics avanzadas
+- Notificaciones push: frontend + Edge Function listos; requieren claves VAPID
+  configuradas (`docs/push.md`) para enviar de verdad
+- Admin: UI básica + analytics básicos (cobertura, actividad)
 
 ## Próximos pasos (BETA 2)
 
 1. Map matching robusto (proyección a grafo vial OSM)
-2. ETA histórico ponderado (ventanas temporales, percentiles)
-3. Detección automática anomalías (saltos GPS, velocidad imposible)
-4. Combinación observaciones múltiples (Kalman filter simple)
-5. Predicción por segmento + hora + día
-6. Push notifications confiables (VAPID + Service Worker)
-7. Analytics admin (cobertura, precisión ETA, usuarios activos)
+2. ✅ ETA histórico ponderado (ventanas temporales, percentiles)
+3. ✅ Detección automática anomalías (saltos GPS, velocidad imposible)
+4. ✅ Combinación observaciones múltiples (Kalman filter simple)
+5. ✅ Predicción por segmento + hora + día
+6. ✅ Push notifications (VAPID + Service Worker + Edge Function `send-push`)
+7. ✅ Analytics admin (cobertura, precisión ETA, usuarios activos)
+
+Pendiente de configuración (no de código): claves VAPID y secretos de la
+Edge Function — ver `docs/push.md`.

@@ -151,6 +151,13 @@ export async function renderPage(container, route) {
 
   attachListeners();
 
+  // Tipo preseleccionado por query (?type=detour, usado por /reportar/desvio)
+  const preType = route.query.get('type');
+  if (preType && REPORT_TYPES.includes(preType)) {
+    const option = document.querySelector(`.report-type-option[data-type="${preType}"]`);
+    if (option) option.click();
+  }
+
   if (preRouteId) {
     await preSelectRoute(preRouteId);
   }

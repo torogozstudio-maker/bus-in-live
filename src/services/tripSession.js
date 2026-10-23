@@ -180,5 +180,28 @@ export const tripSessionService = {
     startFlushInterval();
   },
 
+  // Historial de viajes del usuario actual (RLS: solo los propios).
+  async getHistory(limit = 50) {
+    const supabase = getSupabase();
+    const user = authService.getUser();
+
+    if (!supabase) return { data: null, error: 'Supabase no configurado' };
+    if (!user) return { data: null, error: 'Usuario no autenticado' };
+
+    const { data, error } = await supabase
+      .from('trip_sessions')
+      .select(
+        'id, route_id, variant_id, started_at, ended_at, status, ' +
+        'routes:route_id (code, name, origin, destination), ' +
+        'route_variants:variant_id (name, direct)'
+      )
+      .eq('user_id', user.id)
+      .order('started_at', { ascending: false })
+      .limit(limit);
+
+    if (error) return { data: null, error: error.message };
+    return { data: data || [], error: null };
+  },
+
   TRIP_EVENTS
 };

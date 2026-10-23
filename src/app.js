@@ -409,13 +409,16 @@ export function createApp() {
     await render(() => import('./pages/Reportar.js'), route);
   });
   router.add('/reportar/desvio', async (route) => {
-    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Reportar desvío', text: 'Esta función estará disponible próximamente. Por ahora puedes reportar un desvío desde la página de Reportar.' } });
+    // Alias: renderiza /reportar con el tipo "detour" preseleccionado por query.
+    const query = new URLSearchParams(route.query);
+    query.set('type', 'detour');
+    await render(() => import('./pages/Reportar.js'), { ...route, query });
   });
   router.add('/favoritos', async (route) => {
     await render(() => import('./pages/Favoritos.js'), route);
   });
   router.add('/historial', async (route) => {
-    await render(() => import('./pages/Proximamente.js'), { ...route, params: { title: 'Historial de viajes', text: 'Tu historial de viajes estará disponible en una próxima actualización.' } });
+    await render(() => import('./pages/Historial.js'), route);
   });
   router.add('/perfil', async (route) => {
     await render(() => import('./pages/Perfil.js'), route);

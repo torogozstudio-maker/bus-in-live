@@ -11,6 +11,10 @@ const HISTORICAL_MIN_BIN_SAMPLES = 3;
 const HISTORICAL_MIN_TRAVEL_SECONDS = 1;
 const HISTORICAL_MIN_SESSION_MS = 60 * 1000;
 const HISTORICAL_MAX_SESSION_MS = 4 * 60 * 60 * 1000;
+// Predicción contextual (hora del día / día laborable vs fin de semana):
+// solo se usa un valor contextual si tiene al menos esta cantidad de muestras.
+const HISTORICAL_MIN_CONTEXT_SAMPLES = 3;
+const HISTORICAL_HOUR_BUCKETS = 8; // franjas de 3 h: 00-03, 03-06, ... 21-24
 
 const FUSION_MAX_JUMP_METERS = 300;
 const FUSION_MAX_SPEED_KMH = 130;
@@ -476,6 +480,50 @@ function ensureEtaWarning(warning) {
   return 'El bus puede llegar antes o después. Llegue 5 min antes.';
 }
 
+// Franja horaria de 3 h para una marca de tiempo (0..7).
+function hourBucketOf(timeMs) {
+  return Math.floor(new Date(timeMs).getHours() / (24 / HISTORICAL_HOUR_BUCKETS));
+}
+
+function isWeekendTime(timeMs) {
+  const day = new Date(timeMs).getDay();
+  return day === 0 || day === 6;
+}
+
+// Velocidad preferida de un segmento histórico según la hora/día ACTUALES.
+// Orden de honestidad: franja horaria -> tipo de día -> general.
+// Solo salta de nivel si el nivel más específico tiene muestras suficientes.
+export function preferredHistoricalSpeed(segment, now = Date.now()) {
+  if (!segment) return null;
+
+  const bucket = hourBucketOf(now);
+  const hourStat = segment.hourly ? segment.hourly[bucket] : null;
+  if (
+    hourStat &&
+    hourStat.samples >= HISTORICAL_MIN_CONTEXT_SAMPLES &&
+    Number.isFinite(hourStat.avgSpeedKmh) &&
+    hourStat.avgSpeedKmh > 0
+  ) {
+    return { speed: hourStat.avgSpeedKmh, context: 'hour' };
+  }
+
+  const weekend = isWeekendTime(now);
+  const contextSpeed = weekend ? segment.weekendSpeed : segment.weekdaySpeed;
+  const contextSamples = weekend ? segment.weekendSamples : segment.weekdaySamples;
+  if (
+    contextSamples >= HISTORICAL_MIN_CONTEXT_SAMPLES &&
+    Number.isFinite(contextSpeed) &&
+    contextSpeed > 0
+  ) {
+    return { speed: contextSpeed, context: 'daytype' };
+  }
+
+  if (Number.isFinite(segment.avgSpeedKmh) && segment.avgSpeedKmh > 0) {
+    return { speed: segment.avgSpeedKmh, context: 'overall' };
+  }
+  return null;
+}
+
 function calculateRouteDistance(routeShape) {
   if (!routeShape || !routeShape.coordinates) return 0;
 
@@ -537,14 +585,12 @@ function buildHistoricalSegments(routeShape, historical) {
       Math.floor(midProgress / HISTORICAL_BIN_WIDTH)
     );
     const bin = historical.segments.find(segment => segment && segment.index === binIndex);
-    if (
-      bin &&
-      bin.samples >= HISTORICAL_MIN_BIN_SAMPLES &&
-      Number.isFinite(bin.avgSpeedKmh) &&
-      bin.avgSpeedKmh > 0
-    ) {
-      segments[i] = { index: i, avgSpeed: bin.avgSpeedKmh, samples: bin.samples };
-      hasAny = true;
+    if (bin && bin.samples >= HISTORICAL_MIN_BIN_SAMPLES) {
+      const preferred = preferredHistoricalSpeed(bin);
+      if (preferred) {
+        segments[i] = { index: i, avgSpeed: preferred.speed, samples: bin.samples, context: preferred.context };
+        hasAny = true;
+      }
     }
   }
 
@@ -629,6 +675,10 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
     const ageDays = Math.max(0, now - endTime) / (24 * 60 * 60 * 1000);
     const weight = Math.pow(0.5, ageDays / HISTORICAL_HALF_LIFE_DAYS);
 
+    // Contexto del viaje: franja horaria (3 h) y tipo de día de su inicio.
+    const hourBucket = hourBucketOf(startTime);
+    const weekend = isWeekendTime(startTime);
+
     const cumulativeDistance = [0];
     for (let i = 1; i < points.length; i++) {
       const hop = haversineDistance(
@@ -651,7 +701,7 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
       if (targetIndex > 0) {
         const travelSeconds = (points[targetIndex].time - startTime) / 1000;
         if (travelSeconds >= HISTORICAL_MIN_TRAVEL_SECONDS) {
-          travelSamples.push({ value: travelSeconds, weight });
+          travelSamples.push({ value: travelSeconds, weight, hourBucket, weekend });
         }
       }
     }
@@ -674,7 +724,7 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
       const speedKmh = (distance / travelSeconds) * 3.6;
       if (!isValidSpeed(speedKmh)) continue;
 
-      binEntries[bin].push({ seconds: travelSeconds, speed: speedKmh, weight });
+      binEntries[bin].push({ seconds: travelSeconds, speed: speedKmh, weight, hourBucket, weekend });
     }
   }
 
@@ -682,6 +732,23 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
   for (let bin = 0; bin < binEntries.length; bin++) {
     const entries = binEntries[bin];
     if (entries.length === 0) continue;
+
+    // Estadísticas por franja horaria (3 h): solo si alcanzan las muestras.
+    const hourly = {};
+    for (let b = 0; b < HISTORICAL_HOUR_BUCKETS; b++) {
+      const bucketEntries = entries.filter(entry => entry.hourBucket === b);
+      if (bucketEntries.length >= HISTORICAL_MIN_CONTEXT_SAMPLES) {
+        hourly[b] = {
+          samples: bucketEntries.length,
+          medianSeconds: roundOrNull(weightedPercentile(bucketEntries, 0.5, 'seconds')),
+          avgSpeedKmh: roundOrNull(weightedPercentile(bucketEntries, 0.5, 'speed'), 1)
+        };
+      }
+    }
+
+    const weekdayEntries = entries.filter(entry => !entry.weekend);
+    const weekendEntries = entries.filter(entry => entry.weekend);
+
     segments.push({
       index: bin,
       from: bin === 0 ? 0 : HISTORICAL_BIN_THRESHOLDS[bin - 1],
@@ -690,7 +757,16 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
       medianSeconds: roundOrNull(weightedPercentile(entries, 0.5, 'seconds')),
       p25Seconds: roundOrNull(weightedPercentile(entries, 0.25, 'seconds')),
       p75Seconds: roundOrNull(weightedPercentile(entries, 0.75, 'seconds')),
-      avgSpeedKmh: roundOrNull(weightedPercentile(entries, 0.5, 'speed'), 1)
+      avgSpeedKmh: roundOrNull(weightedPercentile(entries, 0.5, 'speed'), 1),
+      hourly,
+      weekdaySpeed: weekdayEntries.length >= HISTORICAL_MIN_CONTEXT_SAMPLES
+        ? roundOrNull(weightedPercentile(weekdayEntries, 0.5, 'speed'), 1)
+        : null,
+      weekdaySamples: weekdayEntries.length,
+      weekendSpeed: weekendEntries.length >= HISTORICAL_MIN_CONTEXT_SAMPLES
+        ? roundOrNull(weightedPercentile(weekendEntries, 0.5, 'speed'), 1)
+        : null,
+      weekendSamples: weekendEntries.length
     });
   }
 
@@ -699,6 +775,21 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
   const median = weightedPercentile(travelSamples, 0.5);
   const p25 = weightedPercentile(travelSamples, 0.25);
   const p75 = weightedPercentile(travelSamples, 0.75);
+
+  // Viajes completos agrupados por franja horaria (transparencia del ETA).
+  const timeBuckets = [];
+  for (let b = 0; b < HISTORICAL_HOUR_BUCKETS; b++) {
+    const bucketSamples = travelSamples.filter(sample => sample.hourBucket === b);
+    if (bucketSamples.length >= HISTORICAL_MIN_CONTEXT_SAMPLES) {
+      timeBuckets.push({
+        bucket: b,
+        samples: bucketSamples.length,
+        medianSeconds: roundOrNull(weightedPercentile(bucketSamples, 0.5)),
+        p25Seconds: roundOrNull(weightedPercentile(bucketSamples, 0.25)),
+        p75Seconds: roundOrNull(weightedPercentile(bucketSamples, 0.75))
+      });
+    }
+  }
 
   return {
     samples: travelSamples.length,
@@ -710,7 +801,8 @@ export async function calculateHistoricalETA(routeId, stopId, variantId = null) 
     medianSeconds: roundOrNull(median),
     p25Seconds: roundOrNull(p25),
     p75Seconds: roundOrNull(p75),
-    segments
+    segments,
+    timeBuckets
   };
 }
 
@@ -869,6 +961,7 @@ export const etaService = {
   calculateRouteDistance,
   calculateConfidence,
   calculateHistoricalETA,
+  preferredHistoricalSpeed,
   fuseObservations,
   estimateETA
 };

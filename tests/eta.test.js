@@ -3,7 +3,8 @@ import {
   haversineDistance,
   isValidSpeed,
   pointToLineDistance,
-  calculateSpeed
+  calculateSpeed,
+  preferredHistoricalSpeed
 } from '../src/services/eta.js';
 import { etaService } from '../src/services/eta.js';
 
@@ -93,5 +94,61 @@ describe('etaService', () => {
     expect(typeof etaService.haversineDistance).toBe('function');
     expect(typeof etaService.isValidSpeed).toBe('function');
     expect(typeof etaService.isPositionOnRoute).toBe('function');
+  });
+});
+
+describe('preferredHistoricalSpeed (predicción por hora/día)', () => {
+  // Fechas construidas en hora local para no depender de la zona horaria de la máquina.
+  const friday10 = new Date(2026, 9, 23, 10, 0, 0).getTime(); // viernes 10:00 → franja 3
+  const saturday10 = new Date(2026, 9, 24, 10, 0, 0).getTime(); // sábado 10:00
+
+  it('sin segmento devuelve null', () => {
+    expect(preferredHistoricalSpeed(null)).toBeNull();
+    expect(preferredHistoricalSpeed(undefined)).toBeNull();
+  });
+
+  it('prioriza la franja horaria actual con muestras suficientes', () => {
+    const segment = {
+      avgSpeedKmh: 20,
+      hourly: { 3: { samples: 5, avgSpeedKmh: 35 } },
+      weekdaySpeed: 22, weekdaySamples: 10,
+      weekendSpeed: null, weekendSamples: 0
+    };
+    expect(preferredHistoricalSpeed(segment, friday10)).toEqual({ speed: 35, context: 'hour' });
+  });
+
+  it('si la franja no alcanza muestras, usa el tipo de día (fin de semana)', () => {
+    const segment = {
+      avgSpeedKmh: 20,
+      hourly: {},
+      weekdaySpeed: 22, weekdaySamples: 10,
+      weekendSpeed: 30, weekendSamples: 5
+    };
+    expect(preferredHistoricalSpeed(segment, saturday10)).toEqual({ speed: 30, context: 'daytype' });
+  });
+
+  it('en día laborable usa el promedio de días laborables', () => {
+    const segment = {
+      avgSpeedKmh: 20,
+      hourly: {},
+      weekdaySpeed: 25, weekdaySamples: 8,
+      weekendSpeed: null, weekendSamples: 0
+    };
+    expect(preferredHistoricalSpeed(segment, friday10)).toEqual({ speed: 25, context: 'daytype' });
+  });
+
+  it('si nada tiene muestras suficientes cae al general (honesto)', () => {
+    const segment = {
+      avgSpeedKmh: 20,
+      hourly: {},
+      weekdaySpeed: null, weekdaySamples: 1,
+      weekendSpeed: null, weekendSamples: 0
+    };
+    expect(preferredHistoricalSpeed(segment, saturday10)).toEqual({ speed: 20, context: 'overall' });
+  });
+
+  it('velocidades no finitas o <= 0 se ignoran', () => {
+    expect(preferredHistoricalSpeed({ avgSpeedKmh: 0, hourly: {} }, friday10)).toBeNull();
+    expect(preferredHistoricalSpeed({ avgSpeedKmh: NaN, hourly: {} }, friday10)).toBeNull();
   });
 });
