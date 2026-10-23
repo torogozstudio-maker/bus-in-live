@@ -1,4 +1,5 @@
 import { loadLeaflet } from '../utils/leaflet.js';
+import { icon } from '../utils/icons.js';
 import { routeService } from '../services/routes.js';
 import { stopService } from '../services/stops.js';
 import { incidentService } from '../services/incidents.js';
@@ -441,7 +442,7 @@ function showStopInfo(stop, route) {
     <p class="stop-meta">Ruta ${route.code}: ${route.name}</p>
     <div class="stop-actions">
       <a href="/paradas/${stop.id}" class="btn btn-primary btn-sm" data-link>Ver detalle</a>
-      <button class="btn btn-secondary btn-sm" id="favorite-stop-btn">★ Favorito</button>
+      <button class="btn btn-secondary btn-sm" id="favorite-stop-btn">${icon('star', 16)} Favorito</button>
     </div>
   `;
 
@@ -538,18 +539,9 @@ function createStopIcon(type) {
 function createIncidentIcon(type) {
   if (!window.L) return null;
   const L = window.L;
-  const icons = {
-    accident: '🚨',
-    traffic: '🚦',
-    breakdown: '🔧',
-    blockage: '🚧',
-    detour: '🔀',
-    suspended: '⛔',
-    other: '⚠️'
-  };
   return L.divIcon({
     className: 'custom-marker custom-marker-incident',
-    html: `<div style="font-size: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${icons[type] || icons.other}</div>`,
+    html: `<div style="color: #DC2626; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${icon(type, 22)}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14]
   });

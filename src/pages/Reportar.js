@@ -5,6 +5,7 @@ import { geolocationService } from '../services/geolocation.js';
 import { authService } from '../services/auth.js';
 import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
+import { icon } from '../utils/icons.js';
 
 let selectedRoute = null;
 let selectedStop = null;
@@ -429,20 +430,7 @@ function getReportTypeLabel(type) {
 }
 
 function getReportTypeIcon(type) {
-  const icons = {
-    accident: '🚨',
-    traffic: '🚦',
-    breakdown: '🔧',
-    no_show: '🚌',
-    suspended: '⛔',
-    detour: '🔀',
-    incorrect_info: '✏️',
-    incorrect_stop: '📍',
-    incorrect_route: '🗺️',
-    incorrect_eta: '⏱️',
-    other: '⚠️'
-  };
-  return icons[type] || '⚠️';
+  return icon(type, 24);
 }
 
 function getRouteColor(code) {
