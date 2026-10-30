@@ -39,7 +39,12 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const rawUrl = (event.notification.data && event.notification.data.url) || './';
   // Las URLs relativas se resuelven contra el scope (/bus-in-live/).
-  const targetUrl = new URL(rawUrl, self.registration.scope).toString();
+  // La Edge Function manda rutas de la app como '/rutas/ID': se interpretan DENTRO del scope
+  // (/bus-in-live/), no en la raíz del dominio (que daría 404 en GitHub Pages).
+  const relative = rawUrl.startsWith('/') && !rawUrl.startsWith('//') ? rawUrl.slice(1) : rawUrl;
+  let targetUrl = new URL(relative, self.registration.scope);
+  if (targetUrl.origin !== self.location.origin) targetUrl = new URL(self.registration.scope);
+  targetUrl = targetUrl.toString();
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

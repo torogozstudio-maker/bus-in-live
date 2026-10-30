@@ -610,6 +610,21 @@ p a, .auth-footer a, .footer-note a, .field-hint a, .form-hint a {
 [data-theme="dark"] .alert-error { color: #FECACA; }
 [data-theme="dark"] .chip-primary { color: #FECACA; }
 
+/* Insignia de error/administrador: #DC2626 sobre rojo suave da 3.95:1 (se exige 4.5:1) */
+.badge-error { color: var(--error-text); }
+
+/* Insignias claras: el verde y el azul "de marca" no alcanzan 4.5:1 sobre su fondo suave */
+.badge-success { color: #166534; }
+.badge-info { color: #1E40AF; }
+.badge-muted { color: #525252; }
+
+[data-theme="dark"] .badge-success { color: #BBF7D0; }
+[data-theme="dark"] .badge-info { color: #BFDBFE; }
+[data-theme="dark"] .badge-muted { color: #A3A3A3; }
+
+/* Botón de favorito: estrella rellena cuando está activo */
+.is-favorite svg { fill: currentColor; }
+
 /* Favoritos */
 .favorites-section { display: grid; gap: var(--spacing-3); }
 .remove-favorite-btn { flex-shrink: 0; }
@@ -679,7 +694,7 @@ p a, .auth-footer a, .footer-note a, .field-hint a, .form-hint a {
   border-color: var(--primary);
 }
 
-/* ---------- Avisos de validaci�n por campo ---------- */
+/* ---------- Avisos de validaci�n por campo ---------- */
 .field-error {
   margin: var(--spacing-1) 0 0;
   font-size: var(--text-sm);

@@ -70,7 +70,16 @@ export const authService = {
 
     supabase.auth.onAuthStateChange((event, session) => {
       currentSession = session;
-      currentUser = session ? mapUser(session.user) : null;
+      if (!session) {
+        currentUser = null;
+      } else {
+        // mapUser() devuelve rol 'user' por defecto; si es la misma persona se conserva el rol ya
+        // cargado desde profiles (INITIAL_SESSION llega justo después de initialize() y lo pisaba,
+        // con lo que un admin que recargaba /admin era rechazado por la guarda del router).
+        const previousRole = currentUser && currentUser.id === session.user.id ? currentUser.role : null;
+        currentUser = mapUser(session.user);
+        if (previousRole) currentUser.role = previousRole;
+      }
 
       switch (event) {
         case 'SIGNED_IN':

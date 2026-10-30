@@ -30,7 +30,7 @@ export async function renderPage(container, route) {
             <h2>1. ¿Qué quieres reportar?</h2>
           </div>
           <div class="card-body">
-            <div class="report-type-grid" id="report-types">
+            <div class="report-type-grid" id="report-types" role="radiogroup" aria-describedby="report-types-error">
               ${REPORT_TYPES.map(type => `
                 <label class="report-type-option" data-type="${type}">
                   <input type="radio" name="reportType" value="${type}" required aria-describedby="report-types-error">
@@ -405,6 +405,10 @@ async function submitReport() {
   let valid = true;
   if (!type) {
     document.getElementById('report-types-error').textContent = 'Selecciona el tipo de reporte';
+    document.getElementById('report-types').setAttribute('aria-invalid', 'true');
+    const firstInvalid = form.querySelector('input[name="reportType"]');
+    if (firstInvalid) firstInvalid.focus();
+    else focusFirstInvalid(form);
     valid = false;
   }
   if (!selectedRoute && !selectedStop) {

@@ -34,3 +34,6 @@ logs/
 # Archivos temporales de Vite y exportaciones de sesión
 vite.config.js.timestamp-*
 session-*.md
+
+# Temporales de la CLI de Supabase
+supabase/.temp/

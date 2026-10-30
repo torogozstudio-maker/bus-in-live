@@ -463,7 +463,14 @@ function showStopInfo(stop, route) {
 
   panel.style.display = 'block';
 
-  // Botón de favorito: alternar y actualizar el texto
+  // El estado "es favorito" se muestra con la estrella rellena (CSS .is-favorite) y aria-pressed,
+  // no con un carácter de texto.
+  function markFavorite(btn, isFavorite) {
+    btn.innerHTML = `${icon('star', 16)} Favorito`;
+    btn.classList.toggle('is-favorite', isFavorite);
+    btn.setAttribute('aria-pressed', String(isFavorite));
+  }
+
   const favBtn = document.getElementById('favorite-stop-btn');
   if (favBtn) {
     favBtn.addEventListener('click', async () => {
@@ -473,11 +480,11 @@ function showStopInfo(stop, route) {
         const isFav = await favoriteService.isFavorite(null, stop.id);
         if (isFav) {
           await favoriteService.removeFavorite(null, stop.id);
-          favBtn.innerHTML = `${icon('star', 16)} Favorito`;
+          markFavorite(favBtn, false);
           toastService.success('Quitado de favoritos');
         } else {
           await favoriteService.addFavorite({ stop_id: stop.id });
-          favBtn.innerHTML = `${icon('star', 16)} ★ Favorito`;
+          markFavorite(favBtn, true);
           toastService.success('Agregado a favoritos');
         }
       } catch (error) {

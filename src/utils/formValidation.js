@@ -40,6 +40,8 @@ export function clearAllErrors(form) {
 }
 
 export function focusFirstInvalid(form) {
-  const first = form.querySelector('[aria-invalid="true"]');
+  // Solo campos visibles: en formularios por pasos hay campos ocultos que no pueden recibir el foco.
+  const candidates = [...form.querySelectorAll('[aria-invalid="true"]')];
+  const first = candidates.find((el) => el.offsetParent !== null) || candidates[0];
   if (first) first.focus();
 }
