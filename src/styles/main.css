@@ -708,6 +708,9 @@
 }
 
 .brand-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
   color: var(--primary);
   flex-shrink: 0;
 }
@@ -981,6 +984,9 @@
 
 /* Sidebar: ver layout.css */
 .brand-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
   color: var(--primary);
   flex-shrink: 0;
 }

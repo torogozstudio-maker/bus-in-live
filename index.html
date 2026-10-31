@@ -28,8 +28,9 @@
   <meta name="twitter:image" content="https://torogozstudio-maker.github.io/bus-in-live/og-image.png">
 
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="/icons/icon-16.svg">
-  <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/logo-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/logo-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
   <!-- Datos estructurados para buscadores y asistentes de IA -->
   <script type="application/ld+json">
@@ -63,7 +64,8 @@
     html { font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
     body { margin: 0; background: #F7F7F7; color: #171717; }
     [data-theme="dark"] body { background: #0F0F0F; color: #F5F5F5; }
-    .boot-header { height: 56px; display: flex; align-items: center; padding: 0 16px; font-weight: 700; font-size: 18px; background: #fff; border-bottom: 1px solid #E5E5E5; }
+    .boot-header { height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 16px; font-weight: 700; font-size: 18px; background: #fff; border-bottom: 1px solid #E5E5E5; }
+    .boot-logo { width: 32px; height: 32px; object-fit: contain; }
     [data-theme="dark"] .boot-header { background: #171717; border-color: #262626; }
     .boot-main { max-width: 1000px; margin: 0 auto; padding: 48px 16px; }
     .boot-main h1 { margin: 0; font-size: 2rem; line-height: 1.2; }
@@ -73,7 +75,7 @@
 </head>
 <body>
   <div id="app">
-    <header class="boot-header">bus-in-live</header>
+    <header class="boot-header"><img class="boot-logo" src="/icons/logo-48.png" alt="" width="32" height="32">bus-in-live</header>
     <main class="boot-main">
       <h1>bus-in-live</h1>
       <p>Transporte público colaborativo en Santa Ana, El Salvador</p>

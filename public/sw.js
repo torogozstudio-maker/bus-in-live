@@ -28,8 +28,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: './icons/icon-192.svg',
-      badge: './icons/icon-192.svg',
+      icon: './icons/logo-192.png',
+      badge: './icons/logo-badge-96.png',
       data: { url: payload.url }
     })
   );
