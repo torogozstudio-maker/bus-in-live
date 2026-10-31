@@ -106,14 +106,14 @@ export const router = {
       await notFoundHandler(currentRoute);
     }
 
-    for (const hook of afterEachHooks) hook(currentRoute);
-
     const url = withBase(pathname) + search;
     if (replace) {
       history.replaceState(null, '', url);
     } else {
       history.pushState(null, '', url);
     }
+
+    for (const hook of afterEachHooks) hook(currentRoute);
   },
 
   /** Vuelve a cargar la ruta actual (lo usan los botones "Reintentar"). */

@@ -85,8 +85,8 @@ const PAGE_TITLES = [
 
 // Marca el enlace activo en la barra lateral y la navegación inferior según la
 // ruta actual. Se llama tras cada navegación porque el layout no se re-renderiza.
-function updateNavActiveState() {
-  const path = stripBase(window.location.pathname);
+function updateNavActiveState(pathname) {
+  const path = pathname || stripBase(window.location.pathname);
   const links = Array.from(document.querySelectorAll('.sidebar-link, .bottom-nav-item'));
   const matches = (href) => path === href || (href !== '/' && path.startsWith(href + '/'));
 
@@ -368,7 +368,7 @@ export function createApp() {
   setupRouteGuards();
   router.afterEach((route) => {
     document.title = titleFor(route.pathname);
-    updateNavActiveState();
+    updateNavActiveState(route.pathname);
   });
   themeService.init();
   toastService.init();
