@@ -9,7 +9,7 @@ export async function renderPage(container) {
       <div class="auth-card">
         <div class="auth-header">
           <a href="/" class="auth-brand" data-link>
-            <img src="/icons/logo-128.png" alt="" width="32" height="32" class="auth-brand-logo" decoding="async">
+            <img src="${import.meta.env.BASE_URL}icons/logo-128.png" alt="" width="32" height="32" class="auth-brand-logo" decoding="async">
             <span>bus-in-live</span>
           </a>
           <h1>Crear cuenta</h1>

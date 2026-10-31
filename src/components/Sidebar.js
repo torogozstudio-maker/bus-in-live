@@ -35,7 +35,7 @@ export function renderSidebar() {
     <div class="sidebar-container">
       <div class="sidebar-header">
         <a href="/" class="sidebar-brand" data-nav-link>
-          <img class="sidebar-brand-icon" src="/icons/logo-128.png" alt="" width="24" height="24" decoding="async">
+          <img class="sidebar-brand-icon" src="${import.meta.env.BASE_URL}icons/logo-128.png" alt="" width="24" height="24" decoding="async">
           <span>bus-in-live</span>
         </a>
         <button id="sidebar-close" class="btn btn-ghost btn-icon sidebar-close-btn" aria-label="Cerrar menú">
