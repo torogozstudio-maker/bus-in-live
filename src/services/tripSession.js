@@ -41,6 +41,27 @@ async function savePositions(positions) {
   }
 }
 
+// Convierte los puntos GPS del viaje en el trazado de la ruta (RPC segura).
+// Si no hay suficientes puntos/precisión, el servidor no publica nada.
+async function contributeRouteShape(sessionId) {
+  const supabase = getSupabase();
+  if (!supabase || !sessionId) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('contribute_route_shape', {
+      p_session_id: sessionId
+    });
+    if (error) {
+      console.warn('No se pudo guardar el trazado del viaje:', error.message);
+      return null;
+    }
+    return data;
+  } catch (error) {
+    console.warn('No se pudo guardar el trazado del viaje:', error);
+    return null;
+  }
+}
+
 function startFlushInterval() {
   flushInterval = setInterval(() => {
     if (positionBuffer.length > 0) {
@@ -139,6 +160,7 @@ export const tripSessionService = {
     stopFlushInterval();
 
     const supabase = getSupabase();
+    const endedSession = currentSession;
     if (supabase) {
       await supabase
         .from('trip_sessions')
@@ -146,10 +168,11 @@ export const tripSessionService = {
           ended_at: new Date().toISOString(),
           status: 'completed'
         })
-        .eq('id', currentSession.id);
-    }
+        .eq('id', endedSession.id);
 
-    const endedSession = currentSession;
+      // Guarda el recorrido de este viaje como trazado de la ruta.
+      await contributeRouteShape(endedSession.id);
+    }
     currentSession = null;
     isActive = false;
 
@@ -174,7 +197,12 @@ export const tripSessionService = {
       .eq('user_id', user.id)
       .is('ended_at', null);
 
-    return { error };
+    if (error) return { error };
+
+    // Aprovecha los puntos guardados para completar el trazado de la ruta.
+    await contributeRouteShape(sessionId);
+
+    return { error: null };
   },
 
   getCurrentSession() {

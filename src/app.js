@@ -1,5 +1,5 @@
 import { authService, AUTH_EVENTS } from './services/auth.js';
-import { router } from './utils/router.js';
+import { router, stripBase } from './utils/router.js';
 import { eventBus } from './utils/eventBus.js';
 import { toastService, TOAST_EVENTS } from './services/toast.js';
 import { geolocationService } from './services/geolocation.js';
@@ -83,6 +83,30 @@ const PAGE_TITLES = [
   ['/admin', 'Panel de administración'],
 ];
 
+// Marca el enlace activo en la barra lateral y la navegación inferior según la
+// ruta actual. Se llama tras cada navegación porque el layout no se re-renderiza.
+function updateNavActiveState() {
+  const path = stripBase(window.location.pathname);
+  const links = Array.from(document.querySelectorAll('.sidebar-link, .bottom-nav-item'));
+  const matches = (href) => path === href || (href !== '/' && path.startsWith(href + '/'));
+
+  // Gana el href más específico (más largo): evita que /admin quede activo
+  // junto a /admin/rutas, o que /rutas lo esté junto a /rutas/crear.
+  let best = null;
+  links.forEach((link) => {
+    const href = link.getAttribute('href');
+    if (href && matches(href) && (!best || href.length > best.length)) best = href;
+  });
+
+  links.forEach((link) => {
+    const href = link.getAttribute('href');
+    const active = !!href && href === best;
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+}
+
 function titleFor(pathname) {
   if (pathname === '/') return PAGE_TITLES[0][1];
   const hit = PAGE_TITLES.find(([p]) => p !== '/' && (pathname === p || pathname.startsWith(p + '/')));
@@ -113,6 +137,7 @@ function updateLayout() {
   }
 
   attachLayoutListeners();
+  updateNavActiveState();
 }
 
 function attachLayoutListeners() {
@@ -341,7 +366,10 @@ export function createApp() {
   updateLayout();
   setupAuthListeners();
   setupRouteGuards();
-  router.afterEach((route) => { document.title = titleFor(route.pathname); });
+  router.afterEach((route) => {
+    document.title = titleFor(route.pathname);
+    updateNavActiveState();
+  });
   themeService.init();
   toastService.init();
 

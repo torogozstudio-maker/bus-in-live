@@ -8,6 +8,7 @@ import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
 import { getCurrentCity } from '../config/city.js';
 import { escapeHtml } from '../utils/sanitize.js';
+import { geometryToLatLngs } from '../utils/geo.js';
 
 let selectedRoute = null;
 let selectedVariant = null;
@@ -364,6 +365,9 @@ function selectRouteForTrip(route) {
 
 async function loadVariantsForTrip(routeId) {
   const { data: route } = await routeService.getRouteById(routeId);
+  if (route && selectedRoute?.id === routeId) {
+    selectedRoute = { ...selectedRoute, ...route };
+  }
   const variants = route?.route_variants?.filter(v => v.active) || [];
   const container = document.getElementById('variant-options');
 
@@ -401,6 +405,12 @@ async function startTrip() {
   }
 
   try {
+    // La búsqueda solo trae datos básicos; carga el detalle para tener el
+    // trazado existente (route_shapes) y las variantes.
+    if (!Array.isArray(selectedRoute.route_shapes)) {
+      const { data: fullRoute } = await routeService.getRouteById(selectedRoute.id);
+      if (fullRoute) selectedRoute = { ...selectedRoute, ...fullRoute };
+    }
     await tripSessionService.startSession(selectedRoute.id, selectedVariant, isDirect);
   } catch (error) {
     console.error('Error starting trip:', error);
@@ -474,9 +484,14 @@ async function initTripMap() {
   let bounds = null;
   const shape = selectedRoute?.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
   if (shape) {
-    const coords = shape.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-    L.polyline(coords, { color: getRouteColor(selectedRoute.code), weight: 3, opacity: 0.7 }).addTo(map);
-    bounds = L.polyline(coords).getBounds();
+    const layers = geometryToLatLngs(shape.geometry).map(coords => L.polyline(coords, {
+      color: getRouteColor(selectedRoute.code),
+      weight: 3,
+      opacity: 0.7
+    }).addTo(map));
+    if (layers.length > 0) {
+      bounds = L.featureGroup(layers).getBounds();
+    }
   }
 
   if (bounds && bounds.isValid()) {

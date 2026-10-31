@@ -8,8 +8,13 @@ import { escapeHtml } from '../utils/sanitize.js';
 let userLocation = null;
 let nearbyStops = [];
 let radius = 500;
+let unsubscribers = [];
 
 export async function renderPage(container) {
+  userLocation = null;
+  nearbyStops = [];
+  radius = 500;
+
   container.innerHTML = `
     <div class="page-container">
       <header class="page-header">
@@ -104,23 +109,33 @@ function attachListeners() {
     }
   });
 
-  eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
+  unsubscribers.push(eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
     userLocation = position;
     updateLocationStatus(position);
     searchNearbyStops();
-  });
+  }));
 
-  eventBus.on(GEOLOCATION_EVENTS.ERROR, (error) => {
+  unsubscribers.push(eventBus.on(GEOLOCATION_EVENTS.ERROR, (error) => {
     showLocationError(error.message);
-  });
+  }));
 
-  eventBus.on(GEOLOCATION_EVENTS.PERMISSION_CHANGED, (state) => {
+  unsubscribers.push(eventBus.on(GEOLOCATION_EVENTS.PERMISSION_CHANGED, (state) => {
     if (state === 'granted' && !userLocation) {
       initializeLocation();
     } else if (state === 'denied') {
       showLocationError('Permiso de ubicación denegado');
     }
-  });
+  }));
+}
+
+// Limpieza al salir de la página: sin esto, los listeners siguen vivos y al
+// recibir una posición intentan escribir en elementos que ya no existen.
+export function cleanup() {
+  unsubscribers.forEach(fn => { try { fn(); } catch (e) { /* ya removido */ } });
+  unsubscribers = [];
+  userLocation = null;
+  nearbyStops = [];
+  radius = 500;
 }
 
 async function initializeLocation() {
@@ -128,6 +143,8 @@ async function initializeLocation() {
   const gpsDisabledEl = document.getElementById('gps-disabled');
   const stopsList = document.getElementById('stops-list');
   const emptyState = document.getElementById('empty-state');
+
+  if (!statusEl || !gpsDisabledEl || !stopsList || !emptyState) return;
 
   statusEl.style.display = 'flex';
   gpsDisabledEl.style.display = 'none';
@@ -152,6 +169,7 @@ async function initializeLocation() {
 
 function updateLocationStatus(position) {
   const statusEl = document.getElementById('location-status');
+  if (!statusEl) return;
   const accuracy = position.accuracy;
 
   statusEl.innerHTML = `
@@ -172,6 +190,8 @@ function showLocationError(message) {
   const stopsList = document.getElementById('stops-list');
   const emptyState = document.getElementById('empty-state');
 
+  if (!statusEl || !gpsDisabledEl || !stopsList || !emptyState) return;
+
   statusEl.style.display = 'none';
   gpsDisabledEl.style.display = 'flex';
   gpsDisabledEl.querySelector('p').textContent = message;
@@ -184,6 +204,8 @@ async function searchNearbyStops() {
 
   const stopsList = document.getElementById('stops-list');
   const emptyState = document.getElementById('empty-state');
+
+  if (!stopsList || !emptyState) return;
 
   stopsList.innerHTML = `
     <div class="loading-state" style="padding: 32px; text-align: center;">

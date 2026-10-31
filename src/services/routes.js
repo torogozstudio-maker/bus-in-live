@@ -12,7 +12,7 @@ export const routeService = {
         *,
         route_variants (id, name, variant_type, direct, active),
         stops:route_stops (stops (id, name, latitude, longitude, stop_type)),
-        route_shapes (geometry, version, active)
+        route_shapes (id, variant_id, geometry, version, active, source)
       `)
       .is('deleted_at', null)
       .eq('validation_status', 'approved');
@@ -52,7 +52,7 @@ export const routeService = {
           direction,
           stops (id, name, latitude, longitude, stop_type, description)
         ),
-        route_shapes (geometry, version, active)
+        route_shapes (id, variant_id, geometry, version, active, source)
       `)
       .eq('id', id)
       .is('deleted_at', null)

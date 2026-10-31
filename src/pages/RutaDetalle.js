@@ -11,6 +11,7 @@ import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
 import { escapeHtml } from '../utils/sanitize.js';
+import { geometryToLatLngs } from '../utils/geo.js';
 
 let currentRoute = null;
 let currentVariantId = null;
@@ -417,6 +418,9 @@ async function initRouteMap(routeId) {
   const shape = route?.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
   if (!shape) return;
 
+  const shapeLines = geometryToLatLngs(shape.geometry);
+  if (shapeLines.length === 0) return;
+
   const map = L.map(mapEl, {
     zoomControl: false,
     attributionControl: false,
@@ -430,13 +434,12 @@ async function initRouteMap(routeId) {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  const coords = shape.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-  L.polyline(coords, {
+  const layers = shapeLines.map(coords => L.polyline(coords, {
     color: getRouteColor(route.code),
     weight: 4,
     opacity: 0.9
-  }).addTo(map);
-  map.fitBounds(L.polyline(coords).getBounds(), { padding: [20, 20] });
+  }).addTo(map));
+  map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [20, 20] });
 
   const { data: stops } = await stopService.getStopsForRoute(routeId);
   stops?.forEach(rs => {
