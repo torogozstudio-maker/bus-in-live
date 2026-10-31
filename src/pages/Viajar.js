@@ -8,7 +8,7 @@ import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
 import { getCurrentCity } from '../config/city.js';
 import { escapeHtml } from '../utils/sanitize.js';
-import { geometryToLatLngs } from '../utils/geo.js';
+import { geometryToLatLngs, findActiveShape } from '../utils/geo.js';
 
 let selectedRoute = null;
 let selectedVariant = null;
@@ -482,7 +482,7 @@ async function initTripMap() {
   // Leaflet necesita una vista inicial válida. Sin ella, setView() recibe un
   // zoom undefined y entra en un bucle infinito de tiles.
   let bounds = null;
-  const shape = selectedRoute?.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
+  const shape = findActiveShape(selectedRoute?.route_shapes, selectedVariant);
   if (shape) {
     const layers = geometryToLatLngs(shape.geometry).map(coords => L.polyline(coords, {
       color: getRouteColor(selectedRoute.code),

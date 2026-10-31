@@ -9,7 +9,7 @@ import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { getCurrentCity } from '../config/city.js';
 import { escapeHtml } from '../utils/sanitize.js';
-import { geometryToLatLngs } from '../utils/geo.js';
+import { geometryToLatLngs, findActiveShape } from '../utils/geo.js';
 
 let map = null;
 let L = null;
@@ -266,7 +266,7 @@ async function loadRoutes() {
   routesLayer.clearLayers();
 
   routes.forEach(route => {
-    const shape = route.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
+    const shape = findActiveShape(route.route_shapes);
     if (!shape) return;
 
     geometryToLatLngs(shape.geometry).forEach(coords => {
@@ -313,23 +313,23 @@ async function selectRoute(routeId) {
   observationsLayer.clearLayers();
 
   if (route.route_shapes && route.route_shapes.length > 0) {
-    route.route_shapes.forEach(shape => {
-      if (!shape.geometry?.coordinates) return;
-
-      const isActive = shape.active && (!selectedVariantId || shape.variant_id === selectedVariantId);
-      geometryToLatLngs(shape.geometry).forEach(coords => {
-        const polyline = L.polyline(coords, {
-          color: getRouteColor(route.code),
-          weight: isActive ? 4 : 2,
-          opacity: isActive ? 0.9 : 0.4,
-          dashArray: isActive ? null : '10, 5',
-          lineCap: 'round',
-          lineJoin: 'round'
+    route.route_shapes
+      .filter(shape => shape.active !== false && shape.geometry?.coordinates)
+      .forEach(shape => {
+        const isActive = !selectedVariantId || shape.variant_id === selectedVariantId;
+        geometryToLatLngs(shape.geometry).forEach(coords => {
+          const polyline = L.polyline(coords, {
+            color: getRouteColor(route.code),
+            weight: isActive ? 4 : 2,
+            opacity: isActive ? 0.9 : 0.4,
+            dashArray: isActive ? null : '10, 5',
+            lineCap: 'round',
+            lineJoin: 'round'
+          });
+          polyline.bindPopup(`<strong>Ruta ${escapeHtml(route.code)}</strong><br>${escapeHtml(route.name)}<br>${shape.variant_id ? `Variante: ${escapeHtml(route.route_variants?.find(v => v.id === shape.variant_id)?.name || '')}` : 'Ruta principal'}`);
+          polyline.addTo(routesLayer);
         });
-        polyline.bindPopup(`<strong>Ruta ${escapeHtml(route.code)}</strong><br>${escapeHtml(route.name)}<br>${shape.variant_id ? `Variante: ${escapeHtml(route.route_variants?.find(v => v.id === shape.variant_id)?.name || '')}` : 'Ruta principal'}`);
-        polyline.addTo(routesLayer);
       });
-    });
   }
 
   if (showStops && route.stops) {

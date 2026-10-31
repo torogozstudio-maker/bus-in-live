@@ -11,7 +11,7 @@ import { router } from '../utils/router.js';
 import { toastService } from '../services/toast.js';
 import { eventBus } from '../utils/eventBus.js';
 import { escapeHtml } from '../utils/sanitize.js';
-import { geometryToLatLngs } from '../utils/geo.js';
+import { geometryToLatLngs, findActiveShape } from '../utils/geo.js';
 
 let currentRoute = null;
 let currentVariantId = null;
@@ -415,7 +415,7 @@ async function initRouteMap(routeId) {
   }
 
   const { data: route } = await routeService.getRouteById(routeId);
-  const shape = route?.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
+  const shape = findActiveShape(route?.route_shapes, currentVariantId);
   if (!shape) return;
 
   const shapeLines = geometryToLatLngs(shape.geometry);

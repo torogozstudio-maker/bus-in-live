@@ -19,3 +19,22 @@ export function geometryToLatLngs(geometry) {
   const line = toLine(geometry.coordinates);
   return line.length >= 2 ? [line] : [];
 }
+
+// Elige el trazado activo más adecuado: la variante pedida, la ruta principal
+// o el primero disponible (en ese orden). Ignora versiones inactivas.
+export function findActiveShape(shapes, variantId = null) {
+  if (!Array.isArray(shapes)) return null;
+
+  const active = shapes.filter(shape =>
+    shape && shape.active !== false && shape.geometry?.coordinates
+  );
+  if (active.length === 0) return null;
+
+  if (variantId) {
+    return active.find(shape => shape.variant_id === variantId)
+      || active.find(shape => !shape.variant_id)
+      || active[0];
+  }
+
+  return active.find(shape => !shape.variant_id) || active[0];
+}
