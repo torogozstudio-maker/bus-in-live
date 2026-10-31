@@ -76,6 +76,7 @@ async function loadHistory() {
               <div style="display: flex; align-items: center; gap: var(--spacing-3); flex-shrink: 0;">
                 <span style="color: var(--text-secondary); font-size: var(--text-sm);">${escapeHtml(formatDuration(trip.started_at, trip.ended_at))}</span>
                 <span class="badge badge-${statusClass}">${status}</span>
+                ${isActive ? `<button class="btn btn-sm btn-secondary" data-end-session="${escapeHtml(trip.id)}">Finalizar</button>` : ''}
               </div>
             </div>
           </div>
@@ -85,6 +86,21 @@ async function loadHistory() {
   `;
 
   list.style.display = 'block';
+
+  list.querySelectorAll('[data-end-session]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const { error: endError } = await tripSessionService.endSessionById(btn.dataset.endSession);
+      if (endError) {
+        console.error('Error ending trip session:', endError);
+        toastService.error('No se pudo finalizar el viaje');
+        btn.disabled = false;
+        return;
+      }
+      toastService.success('Viaje finalizado');
+      await loadHistory();
+    });
+  });
 }
 
 function formatDateTime(iso) {

@@ -181,12 +181,12 @@ function attachQuickActionListeners() {
 
 async function loadUserData() {
   try {
-    const [favorites, recentRoutes] = await Promise.all([
+    const [favoritesResult, recentRoutes] = await Promise.all([
       favoriteService.getUserFavorites(),
       loadRecentRoutes()
     ]);
 
-    renderFavorites(favorites);
+    renderFavorites(favoritesResult?.data);
     renderRecentRoutes(recentRoutes);
   } catch (error) {
     console.error('Error loading user data:', error);
@@ -225,6 +225,8 @@ function renderFavorites(favorites) {
 
   if (!container || !section) return;
 
+  favorites = Array.isArray(favorites) ? favorites : [];
+
   if (favorites.length === 0) {
     section.style.display = 'none';
     return;
@@ -255,6 +257,8 @@ function renderRecentRoutes(routes) {
   const section = document.getElementById('recent-routes-section');
 
   if (!container || !section) return;
+
+  routes = Array.isArray(routes) ? routes : [];
 
   if (routes.length === 0) {
     section.style.display = 'none';

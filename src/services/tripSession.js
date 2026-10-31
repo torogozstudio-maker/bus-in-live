@@ -85,6 +85,15 @@ export const tripSessionService = {
     if (!user) throw new Error('Usuario no autenticado');
     if (isActive) throw new Error('Ya hay una sesión de viaje activa');
 
+    // Cierra sesiones activas huérfanas (p. ej. de una pestaña cerrada o recarga)
+    // para que no queden "En curso" indefinidamente en el historial.
+    await supabase
+      .from('trip_sessions')
+      .update({ ended_at: new Date().toISOString(), status: 'completed' })
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .is('ended_at', null);
+
     const { data, error } = await supabase
       .from('trip_sessions')
       .insert({
@@ -146,6 +155,26 @@ export const tripSessionService = {
 
     eventBus.emit(TRIP_EVENTS.ENDED, endedSession);
     return endedSession;
+  },
+
+  // Finaliza una sesión concreta del historial (p. ej. una que quedó "En curso"
+  // porque se cerró el navegador sin pulsar "Finalizar viaje").
+  async endSessionById(sessionId) {
+    const supabase = getSupabase();
+    const user = authService.getUser();
+
+    if (!supabase) return { error: 'Supabase no configurado' };
+    if (!user) return { error: 'Usuario no autenticado' };
+    if (!sessionId) return { error: 'Sesión inválida' };
+
+    const { error } = await supabase
+      .from('trip_sessions')
+      .update({ ended_at: new Date().toISOString(), status: 'completed' })
+      .eq('id', sessionId)
+      .eq('user_id', user.id)
+      .is('ended_at', null);
+
+    return { error };
   },
 
   getCurrentSession() {

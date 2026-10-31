@@ -14,11 +14,13 @@ let selectedVariant = null;
 let isDirect = false;
 let currentSession = null;
 let currentPosition = null;
-let positionUpdateInterval = null;
 let map = null;
 let L = null;
 let tripUserMarker = null;
 let cleanupCallbacks = [];
+
+const DEFAULT_CENTER = [13.9931, -89.5577];
+const DEFAULT_ZOOM = 14;
 
 export async function renderPage(container, route) {
   const preSelectedRouteId = route.query.get('route');
@@ -247,6 +249,7 @@ function attachListeners() {
   const unsubPos = eventBus.on(GEOLOCATION_EVENTS.POSITION, (position) => {
     currentPosition = position;
     updateTripDisplay(position);
+    updateTripMap(position);
   });
   cleanupCallbacks.push(unsubPos);
 
@@ -277,10 +280,14 @@ export function cleanup() {
   cleanupCallbacks.forEach(fn => { try { fn(); } catch (e) { /* ya removido */ } });
   cleanupCallbacks = [];
   clearTimeout(searchDebounce);
-  stopPositionUpdates();
   if (map) { map.remove(); map = null; }
   tripUserMarker = null;
   geolocationService.stopTracking();
+  // Al salir de la página se deja de compartir ubicación: cerramos la sesión
+  // para que no quede "En curso" para siempre en el historial.
+  if (tripSessionService.isActive()) {
+    tripSessionService.endSession().catch(() => {});
+  }
 }
 
 async function loadRoutesForTrip(preSelectedId) {
@@ -420,14 +427,13 @@ function showActiveTrip() {
 
   geolocationService.startTracking({ enableHighAccuracy: true, maximumAge: 5000 });
   initTripMap();
-  startPositionUpdates();
 }
 
 function showSetup() {
   document.getElementById('trip-setup').style.display = 'block';
   document.getElementById('trip-active').style.display = 'none';
-  stopPositionUpdates();
   if (map) { map.remove(); map = null; }
+  tripUserMarker = null;
 }
 
 async function endTrip() {
@@ -451,38 +457,38 @@ function updateTripDisplay(position) {
   document.getElementById('detail-sent').textContent = sentCount + 1;
 }
 
-function startPositionUpdates() {
-  positionUpdateInterval = setInterval(() => {
-    if (currentPosition && selectedRoute) {
-      updateTripMap(currentPosition);
-    }
-  }, 5000);
-}
-
-function stopPositionUpdates() {
-  if (positionUpdateInterval) {
-    clearInterval(positionUpdateInterval);
-    positionUpdateInterval = null;
-  }
-}
-
 async function initTripMap() {
   L = await loadLeaflet();
   const mapEl = document.getElementById('trip-map');
   if (!mapEl) return;
 
+  if (map) { map.remove(); map = null; }
+  tripUserMarker = null;
+
   map = L.map(mapEl, { zoomControl: false, attributionControl: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
   L.control.zoom({ position: 'topright' }).addTo(map);
 
-  if (selectedRoute?.route_shapes?.length) {
-    const shape = selectedRoute.route_shapes[0];
-    if (shape.geometry?.coordinates) {
-      const coords = shape.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-      L.polyline(coords, { color: getRouteColor(selectedRoute.code), weight: 3, opacity: 0.7 }).addTo(map);
-      map.fitBounds(L.polyline(coords).getBounds(), { padding: [20, 20] });
-    }
+  // Leaflet necesita una vista inicial válida. Sin ella, setView() recibe un
+  // zoom undefined y entra en un bucle infinito de tiles.
+  let bounds = null;
+  const shape = selectedRoute?.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
+  if (shape) {
+    const coords = shape.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+    L.polyline(coords, { color: getRouteColor(selectedRoute.code), weight: 3, opacity: 0.7 }).addTo(map);
+    bounds = L.polyline(coords).getBounds();
   }
+
+  if (bounds && bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [20, 20] });
+  } else if (currentPosition) {
+    map.setView([currentPosition.latitude, currentPosition.longitude], DEFAULT_ZOOM);
+  } else {
+    map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  }
+
+  // Si el contenedor acaba de hacerse visible, recalcula su tamaño.
+  setTimeout(() => { if (map) map.invalidateSize(); }, 100);
 
   if (currentPosition) {
     updateTripMap(currentPosition);
@@ -490,9 +496,13 @@ async function initTripMap() {
 }
 
 function updateTripMap(position) {
-  if (!map) return;
+  if (!map || !L) return;
 
-  const latlng = [position.latitude, position.longitude];
+  const lat = Number(position.latitude);
+  const lng = Number(position.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  const latlng = [lat, lng];
 
   if (!tripUserMarker) {
     tripUserMarker = L.marker(latlng, {
@@ -507,7 +517,8 @@ function updateTripMap(position) {
     tripUserMarker.setLatLng(latlng);
   }
 
-  map.setView(latlng, map.getZoom());
+  const zoom = map.getZoom();
+  map.setView(latlng, Number.isFinite(zoom) ? zoom : DEFAULT_ZOOM);
 }
 
 function getRouteColor(code) {

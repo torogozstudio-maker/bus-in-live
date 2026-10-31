@@ -76,6 +76,7 @@ async function loadRouteDetail(routeId) {
 
 function renderRouteDetail(route, stops, incidents, frequency, isFavorite) {
   const variants = route.route_variants?.filter(v => v.active) || [];
+  const hasShape = !!route.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
   const status = route.status || 'insufficient_info';
   const statusLabel = getStatusLabel(status);
   const groupedStops = groupStopsByDirection(stops);
@@ -121,9 +122,20 @@ function renderRouteDetail(route, stops, incidents, frequency, isFavorite) {
     <div class="container" style="padding-top: 24px; padding-bottom: 24px;">
       <div class="detail-grid">
         <section class="detail-main">
-          <div class="card" id="map-section" style="height: 350px; overflow: hidden;">
-            <div id="route-map" class="map-container" style="height: 100%;"></div>
-          </div>
+          ${hasShape ? `
+            <div class="card" id="map-section" style="height: 350px; overflow: hidden;">
+              <div id="route-map" class="map-container" style="height: 100%;"></div>
+            </div>
+          ` : `
+            <div class="card" id="map-section">
+              <div class="card-body">
+                <div class="empty-state" style="padding: 24px;">
+                  <p class="empty-state-text">Aún no hay un trazado registrado para esta ruta.</p>
+                  <p class="empty-state-text" style="font-size: var(--text-xs); margin-top: 4px;">Cuando la comunidad dibuje el recorrido, aparecerá aquí en el mapa.</p>
+                </div>
+              </div>
+            </div>
+          `}
 
           <div class="card" style="margin-top: 16px;">
             <div class="card-header">
@@ -402,7 +414,8 @@ async function initRouteMap(routeId) {
   }
 
   const { data: route } = await routeService.getRouteById(routeId);
-  if (!route?.route_shapes?.length) return;
+  const shape = route?.route_shapes?.find(s => s.active !== false && s.geometry?.coordinates);
+  if (!shape) return;
 
   const map = L.map(mapEl, {
     zoomControl: false,
@@ -417,16 +430,13 @@ async function initRouteMap(routeId) {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  const shape = route.route_shapes[0];
-  if (shape.geometry?.coordinates) {
-    const coords = shape.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-    L.polyline(coords, {
-      color: getRouteColor(route.code),
-      weight: 4,
-      opacity: 0.9
-    }).addTo(map);
-    map.fitBounds(L.polyline(coords).getBounds(), { padding: [20, 20] });
-  }
+  const coords = shape.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+  L.polyline(coords, {
+    color: getRouteColor(route.code),
+    weight: 4,
+    opacity: 0.9
+  }).addTo(map);
+  map.fitBounds(L.polyline(coords).getBounds(), { padding: [20, 20] });
 
   const { data: stops } = await stopService.getStopsForRoute(routeId);
   stops?.forEach(rs => {
